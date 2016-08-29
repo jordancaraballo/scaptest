@@ -1,0 +1,52 @@
+#!/bin/bash
+# Script to copy files needed to execute baseline audit
+
+### Create scap dir in etc for conf file
+mkdir -m 600 /etc/scapaudit
+cp CheckScapStatus.cfg /etc/scapaudit/
+
+### Copy files to nagios functions folder
+cp CheckBaseScapStatus CheckVulnScapStatus /usr/share/nagios-client/functions/
+
+### Create scap dir in /usr/local/bin for excecutable files
+
+# Baseline Audit Files
+mkdir -m 600 /usr/local/bin/scapaudit
+cp BaseScapTest.pl /usr/local/bin/scapaudit/
+
+# Vulnerabilities Audit Files
+cp VulnScapTest.pl /usr/local/bin/scapaudit/
+cp RunBaseScapTest RunVulnScapTest /etc/cron.daily/
+#-------------------------------------------------------------------------
+# Test files
+#-------------------------------------------------------------------------
+if [ ! -f "/etc/scapaudit/CheckScapStatus.cfg" ]; then
+	echo "CheckScapStatus.cfg NOT FOUND at destination..."
+fi
+#-------------------------------------------------------------------------
+if [ ! -f "/usr/share/nagios-client/functions/CheckBaseScapStatus" ]; then
+	echo "CheckBaseScapStatus NOT FOUND at destination..." 
+fi
+#-------------------------------------------------------------------------
+if [ ! -f "/usr/share/nagios-client/functions/CheckVulnScapStatus" ]; then
+	echo "CheckVulnScapStatus NOT FOUND at destination..." 
+fi
+#-------------------------------------------------------------------------
+if [ ! -f "/usr/local/bin/scapaudit/BaseScapTest.pl" ]; then
+	echo "BaseScapTest.pl NOT FOUND at destination..."
+fi
+#-------------------------------------------------------------------------
+if [ ! -f "/usr/local/bin/scapaudit/VulnScapTest.pl" ]; then
+	echo "VulnScapTest.pl NOT FOUND at destination..."
+fi
+#-------------------------------------------------------------------------
+if [ ! -f "/etc/cron.daily/RunBaseScapTest" ]; then
+	echo "RunBaseScapTest NOT FOUND at destination..."
+fi
+#-------------------------------------------------------------------------
+if [ ! -f "/etc/cron.daily/RunVulnScapTest" ]; then
+	echo "RunVulnScapTest NOT FOUND at destination..."
+fi
+#-------------------------------------------------------------------------
+echo "Done."
+

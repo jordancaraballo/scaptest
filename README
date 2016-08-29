@@ -1,0 +1,201 @@
+#*******************************************************************************#
+# Automated SCAP Security Tool
+# June 6, 2016 - August 12, 2016
+# Author: Jordan Alexis Caraballo-Vega - University of Puerto Rico at Humacao
+# Co-Author: Graham Mosley - University of Pennsylvania
+# Mentors: George Rumney, John Jasen
+#*******************************************************************************#
+# Objectives
+#*******************************************************************************#
+- Tool to continuosly monitor our operating systems
+- Compare and implement different security tools
+- Keep time trending record of the report
+- Identify specific critical rules
+- Report to Nagios
+#*******************************************************************************#
+# Operating Systems and Dependencies
+#*******************************************************************************#
+                     Centos 6, Centos 7, RHEL 6 and RHEL 7
+#*******************************************************************************#
+- Installations:
+   * Note: Install Perl Modules with "perl -MCPAN -e 'install MODULE'"
+   * XML::Twig           - yum install perl-XML-Twig
+   * XML::LibXML         - yum install perl-XML-LibXML
+   * Config::General     - yum install perl-Config-General
+   * Linux::Distribution - Use perl command
+   * OpenSCAP            - yum install openscap-scanner
+   * Security Guide      - yum install scap-security-guide
+   * Bzip2               - yum install bzip2
+   * Switch              - yum install perl-Switch
+
+Centos 6: 
+- Compliance Test: It can use RHEL 6 file. It works right out of the box.
+- Vulnerabilities Test: Uses createCentosCVE(), function developed by Graham Mosley.
+It modifies RHEL feed in order to work with centos.
+
+Centos 7:
+- Compliance Test: Uses RHEL 7 baseline file from openscap folder. It works right out
+of the box. 
+- Vulnerabilities Test: Uses createCentosCVE(), function developed by Graham Mosley.
+It modifies RHEL feed in order to work with centos. 
+
+NOTE: Graham Mosley code changes the corresponding CentOS version, changes the
+platform information, and sign keys to the CentOS equivalent on RHEL.
+
+RHEL 6:
+- Compliance Test: It uses RHEL feed from openscap. It works right out of the box
+- Vulnerabilities Test: Uses general rhel feed retreived from the internet.
+
+RHEL 7:
+- Compliance Test: Uses openscap RHEL 7 feed. It works right out of the box.
+- Vulnerabilities Test: Uses general rhel feed retreived from the internet.
+#*******************************************************************************#
+                            SLES 11sp4 and SLES 12
+#*******************************************************************************#
+- Installations:
+   * Note: Install Perl Modules with "perl -MCPAN -e 'install MODULE'"
+   * XML::Twig           - zypper install perl-XML-Twig
+   * Config::General     - zypper install perl-Config-General
+   * Linux::Distribution - Use perl command
+   * OpenSCAP            - zypper install openscap-content openscap-utils
+
+SLES 11:
+- Compliance Test: Uses CIS-CAT benchmark; no baseline file from openscap found yet.
+- Vulnerabilities Test: Uses sles 11 feed retreived from the internet. 
+
+SLES 12:
+- Compliance Test: Uses CIS-CAT benchmark; no baseline file from openscap found yet.
+- Vulnerabilities Test: Uses sles 12 feed retreived from the internet.
+NOTE: Both sles machines retreive their severities from the cvss database.
+#*******************************************************************************#
+                             Ubuntu 14 and Ubuntu 16
+#*******************************************************************************#
+- Installations:
+   * Note: Install Perl Modules with "perl -MCPAN -e 'install MODULE'"
+   * Switch              - apt-get install libswitch-perl
+   * XML::Twig           - apt-get install xml-twig-tools
+   * Config::General     - Use perl command
+   * OpenSCAP            - apt-get install libopenscap8
+   * Linux::Distribution - Use perl command
+
+Ubuntu 14:
+- Compliance Test: Uses CIS-CAT benchmark; no baseline file from openscap found yet.
+- Vulnerabilities Test: There is an existing file for ubuntu 14 feed. The problem
+is that SCAP and openscap versions are not being compatible at the time of running
+the audit.
+
+Ubuntu 16:
+- Compliance Test: Does not have a CIS-CAT benchmark yet, nor openscap.
+- Vulnerabilities Test: There is an existing file for ubuntu 16. It is running right
+out of the box.
+#*******************************************************************************#
+                                   Debian 8
+#*******************************************************************************#
+- Installations:
+   * Note: Install Perl Modules with "perl -MCPAN -e 'install MODULE'"
+   * Config::General     - apt-get install libconfig-general-perl
+   * Linux::Distribution - Use perl command
+   * Switch              - apt-get install libswitch-perl
+   * XML::Twig           - apt-get install libxml-twig-perl
+   * XML::LibXML         - apt-get install libxml-libxml-perl
+   * OpenSCAP            - apt-get install libopenscap8
+
+Debian 8:
+- Compliance Test: Uses CIS-CAT benchmark; no baseline file from openscap found yet.
+- Vulnerabilities Test: Debian was not supported since 2011; last new files were
+released las July 25, 2016. So further tests need to be done in order to see if
+files are accurate. Severities are still not found.
+#*******************************************************************************#
+                             FreeBSD, Solaris, Windows
+#*******************************************************************************#
+- Compliance Test: Windows and Solaris have CIS-CAT benchmarks; no openscap file 
+found yet. However, FreeBSD has a CIS-CAT benchmark, but does not come with this
+ciscat package, so it has to be searched.
+- Vulnerabilities Test: FreeBSD and Solaris have oval files, and store severities
+in the same file. However, FreeBSD file format is very different so it might not
+work out of the box. Files for Windows need to be searched.
+#*******************************************************************************#
+# Subroutines
+#*******************************************************************************#
+- Baseline Test
+	getDistribution   - Gets the OS distribution through the linux module.
+	getDatestring     - Returns string with the day and time scan is performed
+	createStateFile   - Creates state, if not present; takes last run percentage
+	usage             - Function that prints out script help menu
+	insertPercentage  - Insert new percentage to state file
+	appendReport      - Append results to trend file
+	runCISCAT         - Executes CIS-CAT command
+	runOSCAP          - Executes OSCAP command
+	createLastRunFile - Prevents duplicates to be stored
+	parse_score       - Parse score from resulting xml file
+	parse_rule	  - Parse rule from resulting xml file
+- Vulnerabilities Test
+	getDistribution       - Gets the OS distribution through the linux module.
+	getDatestring         - Returns string with the day and time scan is performed
+	usage                 - Function that prints out script help menu
+	appendReport          - Append results to trend file
+	lookupCVSS            - Parse the CVSS score for a CVE (if it exists)
+	vulnerabilities_Audit - Run oscap depending on the OS
+	updateCVE             - Update cve rules file
+	createReportFile      - Create Last Run File
+	lookupSeverity        - Search severity and crit cves of failed results
+	parse_severity        - Get the severity of the failed test
+	parse_definiton       - Get the definition id
+	parse_result          - Get the result of the test
+	insertCritCVE         - Insert into state file Crit CVEs
+	score_txt             - Score severities through text
+	score_xml             - Score severities through xml and cvss database
+	runOpenSCAP           - Run openscap audit
+#*******************************************************************************#
+# Executing
+#*******************************************************************************#
+When executing the program for the first time you can run CopyFiles script to place
+in the specific folders the needed files to run the system. To check if it is working
+you can run the cron job file. It is configured to run daily.
+
+In order to run CIS-CAT you need to download it from their web page and extract it at
+the /usr/local/bin/scapaudit directory. It needs openJDK installed in order to run.
+The current script is assuming that the jdk package is extracted in the working directory.
+In order to exclude adding the jdk folder, change in the runCISCAT function the run command
+for "./CIS-CAT.sh" and then the commands that follow the line.
+
+In order to report to nagios you have to manually add both Check functions to the
+10_General file.
+#*******************************************************************************#
+# References
+#*******************************************************************************#
+- SCAP 
+	National Institute of Standards and Technology (2009). The Security Content
+	Automation Protocol (SCAP). Retrieved on June, 2016 from https://scap.nist.gov
+- NVD Database
+	National Vulnerability Database. Retrieved on June, 2016 from https://nvd.nist.gov/
+- OVAL
+	Open Vulnerability and Assessment Language. Retrieved on June, 2016 from 
+	http://oval.mitre.org/
+- OpenSCAP
+	OpenSCAP. Retreived on June, 2016 from https://www.open-scap.org/
+- CIS-CAT
+	Center for Internet Security. Retrieved on June, 2016 from 
+	https://benchmarks.cisecurity.org/
+- Centos
+	https://www.redhat.com/security/data/oval/com.redhat.rhsa-all.xml.bz2
+- Red Hat
+	https://www.redhat.com/security/data/oval/com.redhat.rhsa-all.xml.bz2
+- SLES
+	https://support.novell.com/security/oval/suse.linux.enterprise.server.11.xml
+	https://support.novell.com/security/oval/suse.linux.enterprise.server.12.xml
+- Debian
+	https://www.debian.org/security/oval/oval-definitions-2016.xml
+- Ubuntu
+	https://people.canonical.com/~ubuntu-security/oval/com.ubuntu.precise.cve.oval.xml
+	https://people.canonical.com/~ubuntu-security/oval/com.ubuntu.trusty.cve.oval.xml
+	https://people.canonical.com/~ubuntu-security/oval/com.ubuntu.xenial.cve.oval.xml
+- FreeBSD
+	https://svn.freebsd.org/ports/head/security/vuxml/vuln.xml
+- Solaris
+	http://linux.oracle.com/security/oval/com.oracle.elsa-all.xml.bz2
+#*******************************************************************************#
+# Acknowlegments
+#*******************************************************************************#
+Thanks to George Rumney (mentor), John E. Jasen (mentor), Bennett Samowich, 
+Maximiliano Guillen, and Zed Pobre.

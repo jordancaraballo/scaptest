@@ -1,0 +1,15 @@
+#!/bin/bash
+# Script to excecute perl script with baseline audit
+
+### Validate Files Location
+if [ ! -f "/usr/local/bin/scapaudit/BaseScapTest.pl" ]; then
+	echo "BaseScapTest.pl NOT FOUND"
+	exit 0
+elif [ ! -f "/etc/scapaudit/CheckScapStatus.cfg" ]; then
+	echo "CheckScapStatus.cfg NOT FOUND"
+	exit 0
+fi
+
+### Run Baseline Scap Audit with cron
+perl /usr/local/bin/scapaudit/BaseScapTest.pl
+
