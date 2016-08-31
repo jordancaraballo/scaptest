@@ -1,0 +1,6 @@
+### Check SCAP Baseline Status
+CheckBaseScapStatus
+
+### Check SCAP Vulnerabilities Status
+CheckVulnScapStatus
+
