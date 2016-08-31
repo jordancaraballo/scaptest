@@ -4,7 +4,7 @@ CheckVulnScapStatus() {
 
 	### Run the test, capturing the result
 	# Warn range is 48 hours, Crit range is 96 hours
-	AGE_RESULT=`${PLUGINDIR}/check_file_age -w 172800 -c 345600 /var/cache/scapaudit/VulnScapLastRun.txt`
+	AGE_RESULT=`${PLUGINDIR}/check_file_age -w 172800 -c 345600 /var/cache/scaptest/VulnScapLastRun.txt`
 	AGE_STATUS=`echo $AGE_RESULT | cut -d " " -f 2 | cut -d: -f 1` # strips out the status of the result - state
 
 	# Strip out just the data portion of the result - details
@@ -32,20 +32,20 @@ ${HOSTNAME} CheckVulnScapStatus ${STATUS} ${AGE_RESULT}"
 		WARN=0 # var to store warn ocurrences
 
 		# Gets the full report from the audit
-		RESULTLINE=$(head -n 1 /var/cache/scapaudit/VulnScapLastRun.txt)
+		RESULTLINE=$(head -n 1 /var/cache/scaptest/VulnScapLastRun.txt)
 
 		### See if there are failures indicated in the log
 		FAILURES=`grep -o -P '(?<=Score ).*(?=Vulnerabilities)' \
-			/var/cache/scapaudit/VulnScapLastRun.txt`
+			/var/cache/scaptest/VulnScapLastRun.txt`
 
 		CRIT_CVES=`grep -o -P '(?<=CVEs: ).*(?=-fail)' \
-			/var/cache/scapaudit/VulnScapLastRun.txt`
+			/var/cache/scaptest/VulnScapLastRun.txt`
 
 		### Parameters to declare the status of the system acquired from the config file
 		warn_treshold=`grep -oP '(?<=vuln_default_warn = ).*' \
-			/etc/scapaudit/CheckScapStatus.cfg`
+			/etc/scaptest/CheckScapStatus.cfg`
 		crit_treshold=`grep -oP '(?<=vuln_default_crit = ).*' \
-			/etc/scapaudit/CheckScapStatus.cfg`
+			/etc/scaptest/CheckScapStatus.cfg`
 
 		# Assign default value in case variables are empty
 		if [ -z ${warn_treshold} ]; then

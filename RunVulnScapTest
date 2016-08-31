@@ -2,14 +2,14 @@
 # Script to excecute perl script with vulnerability audit
 
 ### Validate Files Location
-if [ ! -f "/usr/local/bin/scapaudit/VulnScapTest.pl" ]; then
+if [ ! -f "/usr/local/lib/scaptest/VulnScapTest.pl" ]; then
 	echo "VulnScapTest.pl NOT FOUND"
 	exit 0
-elif [ ! -f "/etc/scapaudit/CheckScapStatus.cfg" ]; then
+elif [ ! -f "/etc/scaptest/CheckScapStatus.cfg" ]; then
 	echo "CheckScapStatus.cfg NOT FOUND"
 	exit 0
 fi
 
 ### Run Baseline Scap Audit with cron
-perl /usr/local/bin/scapaudit/VulnScapTest.pl
+perl /usr/local/lib/scaptest/VulnScapTest.pl
 

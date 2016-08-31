@@ -44,7 +44,7 @@ sub runOpenSCAP;           # Run openscap audit
 #  General Global variables
 #------------------------------------------------------------------------------------
 # Config file path
-my $CONFPATH = "/etc/scapaudit";   # path where config file is located                				 
+my $CONFPATH = "/etc/scaptest";   # path where config file is located                				 
 die "I don't know where I am." if ($CONFPATH eq "" ); # if path empty, die
 
 my $CRONPATH = cwd(); # get current cron job path

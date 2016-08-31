@@ -38,7 +38,7 @@ sub parse_rule;	     # Parse rule from resulting xml file
 #  General Global variables
 #------------------------------------------------------------------------------------
 ### Config file path
-my $CONFPATH = "/etc/scapaudit"; # path where config file is located                				 
+my $CONFPATH = "/etc/scaptest"; # path where config file is located                				 
 die "I don't know where I am\n" if ($CONFPATH eq "" ); # if path empty, die
 
 my $CONFIG_FILENAME          = $CONFPATH . "/CheckScapStatus.cfg"; 

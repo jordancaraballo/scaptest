@@ -154,10 +154,15 @@ in the specific folders the needed files to run the system. To check if it is wo
 you can run the cron job file. It is configured to run daily.
 
 In order to run CIS-CAT you need to download it from their web page and extract it at
-the /usr/local/bin/scapaudit directory. It needs openJDK installed in order to run.
+the /usr/local/lib/scaptest directory. It needs openJDK installed in order to run.
 The current script is assuming that the jdk package is extracted in the working directory.
 In order to exclude adding the jdk folder, change in the runCISCAT function the run command
 for "./CIS-CAT.sh" and then the commands that follow the line.
+
+To download the CIS-CAT bundle you need a licence, however, it can be downloaded from 
+https://community.cisecurity.org/collab/public/.
+The Oracle JDK package can be downloaded from http://www.oracle.com/technetwork/java/javase/
+downloads/jdk8-downloads-2133151.html?ssSourceSiteId=otnes.
 
 In order to report to nagios you have to manually add both Check functions to the
 10_General file.

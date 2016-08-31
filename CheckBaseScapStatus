@@ -4,7 +4,7 @@ CheckBaseScapStatus() {
 
 	### Run the test, capturing the result
 	# Warn range is 48 hours, Crit range is 96 hours
-	AGE_RESULT=`${PLUGINDIR}/check_file_age -w 172800 -c 345600 /var/cache/scapaudit/BaseScapLastRun.txt`
+	AGE_RESULT=`${PLUGINDIR}/check_file_age -w 172800 -c 345600 /var/cache/scaptest/BaseScapLastRun.txt`
 	AGE_STATUS=`echo $AGE_RESULT | cut -d " " -f 2 | cut -d: -f 1` # strips out the status of the result - state
 
 	# Strip out just the data portion of the result - details
@@ -32,26 +32,26 @@ ${HOSTNAME} CheckBaseScapStatus ${STATUS} ${AGE_RESULT}"
 		WARN=0 # var to store warn ocurrences
 
 		# Gets the full report from the audit
-		RESULTLINE=$(head -n 1 /var/cache/scapaudit/BaseScapLastRun.txt)
+		RESULTLINE=$(head -n 1 /var/cache/scaptest/BaseScapLastRun.txt)
 
 		### See if there are failures indicated in the logs
 		PERCENTAGE=`grep -o -P '(?<=Score ).*(?=%)' \
-			/var/cache/scapaudit/BaseScapLastRun.txt`
+			/var/cache/scaptest/BaseScapLastRun.txt`
 
 		PERC_STATUS=`grep -oP '(?<=Nagios_Status = ).*' \
-			/var/cache/scapaudit/BaseScapStateFile.txt`
+			/var/cache/scaptest/BaseScapStateFile.txt`
 
 		CRIT_CCES=`grep -o -P '(?<=CCEs: ).*(?=-fail)' \
-			/var/cache/scapaudit/BaseScapLastRun.txt`
+			/var/cache/scaptest/BaseScapLastRun.txt`
 
 		WARN_CCES=`grep -o -P '(?<=fail ).*(?=-other)' \
-			/var/cache/scapaudit/BaseScapLastRun.txt`
+			/var/cache/scaptest/BaseScapLastRun.txt`
 
 		### Parameters to declare the status of the system acquired from the config file
 		warn_treshold=`grep -oP '(?<=base_default_warn = ).*' \
-			/etc/scapaudit/CheckScapStatus.cfg`
+			/etc/scaptest/CheckScapStatus.cfg`
 		crit_treshold=`grep -oP '(?<=base_default_crit = ).*' \
-			/etc/scapaudit/CheckScapStatus.cfg`
+			/etc/scaptest/CheckScapStatus.cfg`
 
 		# Assign default value in case variables are empty
 		if [ -z ${warn_treshold} ]; then
