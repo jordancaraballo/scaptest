@@ -211,8 +211,8 @@ appendReport();
 insertCritCVE();
 
 ### Delete files if it is selected in config file
-unlink $SAVINGDIR . "$VULNERAB_RESULTS_FILENAME.html" if (!$config{"save_html"});
-unlink $SAVINGDIR . "$VULNERAB_RESULTS_FILENAME.xml"  if (!$config{"save_xml"});
+unlink "$VULNERAB_RESULTS_FILENAME.html" if (!$config{"save_html"});
+unlink "$VULNERAB_RESULTS_FILENAME.xml"  if (!$config{"save_xml"});
 
 ### Send score to Nagios
 if ($fails >= $crit_threshold) {
