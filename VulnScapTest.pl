@@ -231,31 +231,41 @@ sub getDistribution {
 
     my ($distro, $version); # variables to store distribution and version
 
-    # If it is a linux device. The matches elements can be changed in the config file.
-    if ($^O eq "linux") {
-        my $info_command = `cat /etc/*release`;                        # log of release information
-        my @clean_result = split(/[ ,="]/, $info_command);             # splitting results into array
-        my @linux_os     = split /, /, $config{"compatible_linux_os"}; # list with possible matches
+    # Method #1 - Get distribution and version through rpm command
+    my @rpm_linux_distributions = ("centos", "redhat", "sles");
+    my $rpm_command;
 
-        foreach my $os (@linux_os) {
-            if ( grep { lc $_ eq $os} @clean_result ) {
-                $distro  = lc $os;           # set distribution
-                $info_command =~ /([0-9]+)/; # regex looking for first integer match
-                $version = $1;               # set version
-            }
+    foreach my $os (@rpm_linux_distributions) {
+        $rpm_command = `rpm -qa | grep $os-release`;
+        if ($rpm_command) {
+            $rpm_command =~ /([0-9]+)/; # regex looking for first integer match
+            return $os, $1;             # return distribution and version
         }
     }
-    # If it is a FreeBSD device.
+    # Method #2 - Get distribution and version through cat /etc/*release command
+    my @other_linux_distributions = ("debian", "ubuntu"); # other linux distributions
+    my $release_command           = `cat /etc/*release`;  # log of release information
+
+    if ($release_command) {
+        my @clean_result = split(/[ ,="]/, $release_command); # splitting results into array
+        foreach my $os (@other_linux_distributions) {
+           if ( grep { lc $_ eq $os} @clean_result ) {
+                $release_command =~ /([0-9]+)/; # regex looking for first integer match
+                return lc $os, $1;              # return distribution and version
+           }
+       }
+    }
+    # Method #3 - If it is a FreeBSD device.
     elsif ($^O eq "freebsd") { 
         $distro  = "freebsd";                # set distribution
         $version = `uname -r | cut -d. -f1`; # set version
 	}
-    # If it is a Solaris device.
+    # Method #4 - If it is a Solaris device.
     elsif ($^O eq "solaris") { 
         $distro  = "solaris";                # set distribution
         $version = `uname -v | cut -d. -f1 | tr -d '\n'`; # set version
 	}
-	# If it is a windows device
+	# Method #5 - If it is a windows device
 	elsif ($^O eq "MSWin32") { 
 		($distro, $version) = ($Config{osname}, $Config{osvers}); 
 	}
@@ -263,7 +273,6 @@ sub getDistribution {
 	else { 
 		die "Can't recognize OS. Verify getDistribution sub capabalities." 
 	}
-
 	return $distro, $version; # returns the distribution and version
 }
 #------------------------------------------------------------------------------------
