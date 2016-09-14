@@ -22,11 +22,10 @@
    * XML::Twig           - yum install perl-XML-Twig
    * XML::LibXML         - yum install perl-XML-LibXML
    * Config::General     - yum install perl-Config-General
-   * Linux::Distribution - Use perl command
    * OpenSCAP            - yum install openscap-scanner
    * Security Guide      - yum install scap-security-guide
    * Bzip2               - yum install bzip2
-   * Switch              - yum install perl-Switch
+   * Wget                - yum install wget
 
 Centos 6: 
 - Compliance Test: It can use RHEL 6 file. It works right out of the box.
@@ -55,9 +54,11 @@ RHEL 7:
 - Installations:
    * Note: Install Perl Modules with "perl -MCPAN -e 'install MODULE'"
    * XML::Twig           - zypper install perl-XML-Twig
+   * XML::LibXML         - zypper install perl-XML-LibXML
    * Config::General     - zypper install perl-Config-General
-   * Linux::Distribution - Use perl command
    * OpenSCAP            - zypper install openscap-content openscap-utils
+   * Bzip2               - zypper install bzip2
+   * Wget                - zypper install wget
 
 SLES 11:
 - Compliance Test: Uses CIS-CAT benchmark; no baseline file from openscap found yet.
@@ -72,11 +73,12 @@ NOTE: Both sles machines retreive their severities from the cvss database.
 #*******************************************************************************#
 - Installations:
    * Note: Install Perl Modules with "perl -MCPAN -e 'install MODULE'"
-   * Switch              - apt-get install libswitch-perl
-   * XML::Twig           - apt-get install xml-twig-tools
-   * Config::General     - Use perl command
+   * XML::Twig           - apt-get install xml-twig-tools libxml-twig-perl
+   * XML::LibXML         - apt-get install libxml-libxml-perl
+   * Config::General     - apt-get install libconfig-general-perl
    * OpenSCAP            - apt-get install libopenscap8
-   * Linux::Distribution - Use perl command
+   * Bzip2               - apt-get install bzip2
+   * Wget                - apt-get install wget
 
 Ubuntu 14:
 - Compliance Test: Uses CIS-CAT benchmark; no baseline file from openscap found yet.
@@ -94,11 +96,11 @@ out of the box.
 - Installations:
    * Note: Install Perl Modules with "perl -MCPAN -e 'install MODULE'"
    * Config::General     - apt-get install libconfig-general-perl
-   * Linux::Distribution - Use perl command
-   * Switch              - apt-get install libswitch-perl
    * XML::Twig           - apt-get install libxml-twig-perl
    * XML::LibXML         - apt-get install libxml-libxml-perl
    * OpenSCAP            - apt-get install libopenscap8
+   * Bzip2               - apt-get install bzip2
+   * Wget                - apt-get install wget
 
 Debian 8:
 - Compliance Test: Uses CIS-CAT benchmark; no baseline file from openscap found yet.
@@ -118,7 +120,7 @@ work out of the box. Files for Windows need to be searched.
 # Subroutines
 #*******************************************************************************#
 - Baseline Test
-	getDistribution   - Gets the OS distribution through the linux module.
+	getDistribution   - Gets the OS distribution and version
 	getDatestring     - Returns string with the day and time scan is performed
 	createStateFile   - Creates state, if not present; takes last run percentage
 	usage             - Function that prints out script help menu
@@ -130,7 +132,7 @@ work out of the box. Files for Windows need to be searched.
 	parse_score       - Parse score from resulting xml file
 	parse_rule	  - Parse rule from resulting xml file
 - Vulnerabilities Test
-	getDistribution       - Gets the OS distribution through the linux module.
+	getDistribution       - Gets the OS distribution and version
 	getDatestring         - Returns string with the day and time scan is performed
 	usage                 - Function that prints out script help menu
 	appendReport          - Append results to trend file

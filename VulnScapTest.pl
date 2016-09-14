@@ -11,7 +11,6 @@
 use Cwd;
 use strict;          # disables expressions that could behave unexpectedly or are difficult to debug
 use Config;          # access Perl configuration information
-use Switch;          # to execute switch statement between OS
 use IO::File;		 # supply object methods for filehandles
 use warnings;        # gives control over which warnings are enabled
 use Tie::File;       # used to append/tie date to config file
@@ -23,7 +22,7 @@ use Config::General; # used to parse conf file
 #------------------------------------------------------------------------------------
 #  Prototypes
 #------------------------------------------------------------------------------------
-sub getDistribution;       # Gets the OS distribution through the linux module
+sub getDistribution;       # Gets the OS distribution and version
 sub getDatestring;         # Returns string with the day and time scan is performed
 sub usage;                 # Function that prints out script help menu
 sub inputSanitation;       # Verify user nagios ranges inputs
@@ -45,14 +44,11 @@ sub runOpenSCAP;           # Run openscap audit
 #------------------------------------------------------------------------------------
 # Config file path
 my $CONFPATH = "/etc/scaptest";   # path where config file is located                				 
-die "I don't know where I am." if ($CONFPATH eq "" ); # if path empty, die
+die "I don't know where I am." if ($CONFPATH eq "" );              # if path empty, die
+my $CONFIG_FILENAME          = $CONFPATH . "/CheckScapStatus.cfg"; # conf file name
 
 my $CRONPATH = cwd(); # get current cron job path
-die "I don't know where I am" if ($CRONPATH eq "" ); # if path empty, die
-
-my $CONFIG_FILENAME          = $CONFPATH . "/CheckScapStatus.cfg"; # conf file name
-my ($DISTRIBUTION, $VERSION) = getDistribution(); # OS variable, subroutine below
-my $CONFIGDIS                = $DISTRIBUTION . $VERSION; # used to search elements in conf file
+die "I don't know where I am" if ($CRONPATH eq "" );               # if path empty, die
 #------------------------------------------------------------------------------------
 #  General Global Excecutions and Variables
 #------------------------------------------------------------------------------------
@@ -65,6 +61,10 @@ my $conf = Config::General->new(
     -AutoTrue => 1);
 my %config = $conf->getall; # creates a hash with the elements
 
+### Determine distribution and version of the system
+my ($DISTRIBUTION, $VERSION) = getDistribution();         # OS variable, subroutine below
+my $CONFIGDIS                = $DISTRIBUTION . $VERSION;  # used to search elements in conf file
+
 ### Create the report directory if it does not exist
 my $WORKPATH = $config{"working_directory"};
 die "I don't know where I am" if ($WORKPATH eq "" ); # if path empty, die
@@ -74,7 +74,7 @@ my $SAVINGDIR = $config{"report_directory"}; # takes it from the config file
 mkdir $SAVINGDIR unless -d $SAVINGDIR;       # Check if dir exists. If not, create it. 
 
 ### Create the state file if it does not exist and save last audit percentage
-my $STATE_FILE = $SAVINGDIR . $config{"vuln_state_file"};         # declare name of the state file
+my $STATE_FILE       = $SAVINGDIR . $config{"vuln_state_file"};   # declare name of the state file
 my $LASTRESULT_FILE  = $SAVINGDIR . $config{"vuln_lastrun_file"}; # declare name of last run file
 my $TRENDRESULT_FILE = $SAVINGDIR . $config{"vuln_trend_file"};   # declare name of trending file
 my $CRIT_CVES;                                                    # to store critical cves
@@ -91,14 +91,13 @@ my $crit_threshold = $config{"vuln_default_crit"}; # default warn/crit values ar
 $crit_threshold = 5 if ($crit_threshold eq "");    # default value if they are not initialized
 
 my @critical_cves  = split /, /, $config{"critical_cves"}; # critical cce's taken from config file
-my ($RESULT_PERCENT, $NAGIOS_OUTPUT, $SEVERITIES_FILE); # result percentage, failures, nagios output, severities file
+my ($RESULT_PERCENT, $NAGIOS_OUTPUT, $SEVERITIES_FILE);    # result percentage, failures, nagios output, severities file
 
 ### Default values for warn and crit can be changed here
 GetOptions(
-  "w|warn=s" => \$warn_threshold, # from config file: integer to initialize warning parameter
-  "c|crit=s" => \$crit_threshold, # from config file: integer to initialize crit parameter
-  "n|nagios" => \$NAGIOS_OUTPUT,  # empty nagios variable
-  "h|help"   => \&usage,          # subroutine defined below
+    "w|warn=s" => \$warn_threshold, # from config file: integer to initialize warning parameter
+    "c|crit=s" => \$crit_threshold, # from config file: integer to initialize crit parameter
+    "h|help"   => \&usage,          # subroutine defined below
 );
 
 ### Sanitize basic user input values
@@ -107,7 +106,7 @@ die "Warning value must be larger than critical value\n" if ($warn_threshold > $
 ### Create a hash that stores quantity and severity of test results from score_txt
 my %results;
 
-### Stores criticals cves score
+### Stores critical cves score
 my $CVE_fails = 0;
 #------------------------------------------------------------------------------------
 #  Global Variables for Vulnerabilities Audit Subroutine and Excecution
@@ -137,56 +136,56 @@ my %xml_tests; # hash to save cves and their result, used in score_xml
 # This is used because some operating systems do not have the severities information
 # so it has to be searched in the CVSS database
 if ($FIND_CVSS) {
-	score_xml(); # use cvss function
+    score_xml(); # use cvss function
 }
 else { 
-	score_txt(); # use txt function
+    score_txt(); # use txt function
 } 
 
 sub score_txt {
-	$OSCAP_VULN_RESULTS =~ s/Definition //g;        # cleaning openscap results
-	$OSCAP_VULN_RESULTS =~ s/\nEvaluation done\.//; # cleaning openscap results
-	my @results = split /\n/, $OSCAP_VULN_RESULTS;  # stores results in array
-	my $total_tests = scalar @results; # defines the total number of verified tests
+    $OSCAP_VULN_RESULTS =~ s/Definition //g;            # cleaning openscap results
+    $OSCAP_VULN_RESULTS =~ s/\nEvaluation done\.//;     # cleaning openscap results
+    my @results     = split /\n/, $OSCAP_VULN_RESULTS;  # stores results in array
+    my $total_tests = scalar @results; # defines the total number of verified tests
 
-	# for to increment fails and look up for severities
-	for my $result (@results) {
-		my ($test, $testresult) = split /: /, $result; # split line into the test definition and true/false
-		# The definition reports "true" if the system is vulnerable
-		if ($testresult ne "false") {
-	    	$fails++; # adds 1 to the severities counter
-	    	lookupSeverity($test); # adds 1 to the severity found on %results, adds to crit cves
-		}
-	}
+    # for to increment fails and look up for severities
+    for my $result (@results) {
+        my ($test, $testresult) = split /: /, $result; # split line into the test definition and true/false
+        # The definition reports "true" if the system is vulnerable
+        if ($testresult ne "false") {
+            $fails++; # adds 1 to the severities counter
+            lookupSeverity($test); # adds 1 to the severity found on %results, adds to crit cves
+        }
+    }
 }
 
 sub score_xml {
-	# When XML parser notices one of the below patterns call the respective function
-	my $twig = XML::Twig->new( twig_roots =>
+    # When XML parser notices one of the below patterns call the respective function
+    my $twig = XML::Twig->new( twig_roots =>
     { "oval_results/oval_definitions/definitions/definition" => \&parse_definiton,
-      "oval_results/results/system/definitions/definition" => \&parse_result,
+      "oval_results/results/system/definitions/definition"   => \&parse_result,
     });
 
-	$twig -> parsefile("$VULNERAB_RESULTS_FILENAME.xml"); # parse result file
+    $twig -> parsefile("$VULNERAB_RESULTS_FILENAME.xml"); # parse result file
 
-	# iterate over each CVE and sort by date
-	for my $CVE_object (sort {$b->[0] cmp $a->[0]} values %xml_tests) {
-		if ($CVE_object->[1] eq "true") {
-		    $fails++; # increment number of failed tests
-		    my $CVE = $CVE_object->[0]; # gets cve id
-			foreach my $crit_cve (@critical_cves){ # each cve stated in the conf file 
-				if ($CVE eq $crit_cve){ 
-					$CVE_fails++; # increment quantity of critical cves that failed
-					no warnings 'uninitialized'; # ignore uninitialized errors
-					$CRIT_CVES .= "$CVE "; # append cve id
-				}
-			}
-		    my $link = "https://web.nvd.nist.gov/view/vuln/detail?vulnId=$CVE"; # severities database link
-		    my $cvss = ""; # empty variable to store the severity
-		    $cvss = lookupCVSS($link); # returns the severity
-		    $results{$cvss} += 1; # increment the severity in the hash
-		}
-	}
+    # iterate over each CVE and sort by date
+    for my $CVE_object (sort {$b->[0] cmp $a->[0]} values %xml_tests) {
+        if ($CVE_object->[1] eq "true") {
+            $fails++; # increment number of failed tests
+            my $CVE = $CVE_object->[0]; # gets cve id
+            foreach my $crit_cve (@critical_cves){ # each cve stated in the conf file 
+                if ($CVE eq $crit_cve){ 
+                    $CVE_fails++; # increment quantity of critical cves that failed
+                    no warnings 'uninitialized'; # ignore uninitialized errors
+                    $CRIT_CVES .= "$CVE "; # append cve id
+                }
+            }
+            my $link = "https://web.nvd.nist.gov/view/vuln/detail?vulnId=$CVE"; # severities database link
+            my $cvss = ""; # empty variable to store the severity
+            $cvss = lookupCVSS($link); # returns the severity
+            $results{$cvss} += 1; # increment the severity in the hash
+        }
+    }
 }
 #------------------------------------------------------------------------------------
 #  Report to Nagios
@@ -196,7 +195,7 @@ my $report = "Score $fails Vulnerabilities ";
 
 # Append to report the keys with their results
 foreach my $mykey (sort keys %results) {
-	$report .= "$results{$mykey}-$mykey ";
+    $report .= "$results{$mykey}-$mykey ";
 }
 # Append to report critical rules results
 $report .= "Crit CVEs: $CVE_fails-fail.\n";
@@ -217,9 +216,11 @@ unlink "$VULNERAB_RESULTS_FILENAME.xml"  if (!$config{"save_xml"});
 ### Send score to Nagios
 if ($fails >= $crit_threshold) {
     print (($NAGIOS_OUTPUT ? "CRIT: " : "SCAP CRIT - ") . $report);
-} elsif ($fails >= $warn_threshold) {
+}
+elsif ($fails >= $warn_threshold) {
     print (($NAGIOS_OUTPUT ? "WARN: " : "SCAP WARN - ") . $report);
-} else {
+}
+else {
     print (($NAGIOS_OUTPUT ? "OK: " : "SCAP OK - ") . $report);
 }
 #------------------------------------------------------------------------------------
@@ -227,27 +228,43 @@ if ($fails >= $crit_threshold) {
 #------------------------------------------------------------------------------------
 ### SUB: Gets the OS distribution through the linux module, OS can be added to this function
 sub getDistribution {
-	use if $^O eq "linux", 'Linux::Distribution'; # if system is not linux, do not include
-	my ($distro, $version); # variables to store distribution and version
 
-	# if it is a linux device
-	if ($^O eq "linux") { 
-		my $linux = Linux::Distribution->new; # linux module element
-		# gets distribution and version
-		($distro, $version) = ($linux->distribution_name(), $linux->distribution_version()); 
+    my ($distro, $version); # variables to store distribution and version
+
+    # If it is a linux device. The matches elements can be changed in the config file.
+    if ($^O eq "linux") {
+        my $info_command = `cat /etc/*release`;                        # log of release information
+        my @clean_result = split(/[ ,="]/, $info_command);             # splitting results into array
+        my @linux_os     = split /, /, $config{"compatible_linux_os"}; # list with possible matches
+
+        foreach my $os (@linux_os) {
+            if ( grep { lc $_ eq $os} @clean_result ) {
+                $distro  = lc $os;           # set distribution
+                $info_command =~ /([0-9]+)/; # regex looking for first integer match
+                $version = $1;               # set version
+            }
+        }
+    }
+    # If it is a FreeBSD device.
+    elsif ($^O eq "freebsd") { 
+        $distro  = "freebsd";                # set distribution
+        $version = `uname -r | cut -d. -f1`; # set version
 	}
-
-	# if it is a windows device
+    # If it is a Solaris device.
+    elsif ($^O eq "solaris") { 
+        $distro  = "solaris";                # set distribution
+        $version = `uname -v | cut -d. -f1 | tr -d '\n'`; # set version
+	}
+	# If it is a windows device
 	elsif ($^O eq "MSWin32") { 
 		($distro, $version) = ($Config{osname}, $Config{osvers}); 
 	}
-
-	# if device has not being added to the function
+	# If device has not being added to the function
 	else { 
 		die "Can't recognize OS. Verify getDistribution sub capabalities." 
 	}
 
-	return $distro, (split /\./, $version)[0]; # returns the distribution and version
+	return $distro, $version; # returns the distribution and version
 }
 #------------------------------------------------------------------------------------
 # SUB: Generate a date string
@@ -261,153 +278,153 @@ sub getDatestring {
 }
 #------------------------------------------------------------------------------------
 sub createStateFile {
-	no warnings 'uninitialized'; # ignore uninitialized errors
-	# open and creates file, if file empty, initialize with default value
-	open my $fileHandle, ">>", "$STATE_FILE" or die "Can't open or create $STATE_FILE\n";
-	if (-z $fileHandle) {
-		print $fileHandle "Crit_CVEs = None\n";
-	}
-	close $fileHandle;
-	`chmod 600 $STATE_FILE`; # add root permissions to file
-	return; 
+    no warnings 'uninitialized'; # ignore uninitialized errors
+    # open and creates file, if file empty, initialize with default value
+    open my $fileHandle, ">>", "$STATE_FILE" or die "Can't open or create $STATE_FILE\n";
+    if (-z $fileHandle) {
+        print $fileHandle "Crit_CVEs = None\n";
+    }
+    close $fileHandle;
+    `chmod 600 $STATE_FILE`; # add root permissions to file
+    return; 
 }
 #------------------------------------------------------------------------------------
 # SUB: Insert new percentage to state file
 sub insertCritCVE { 
-	my $posCVE = 0; # position where current percentage is located at the state file
-	no warnings 'uninitialized'; # ignore uninitialized errors
-	tie my @lines, 'Tie::File', "$STATE_FILE" or die "Cannot tie $STATE_FILE: $!"; # tie lines from file to array
+    my $posCVE = 0; # position where current percentage is located at the state file
+    no warnings 'uninitialized'; # ignore uninitialized errors
+    tie my @lines, 'Tie::File', "$STATE_FILE" or die "Cannot tie $STATE_FILE: $!"; # tie lines from file to array
 
-	my @CVEline_str   = split / /, $lines[$posCVE]; # to store the splitted line results
+    my @CVEline_str   = split / /, $lines[$posCVE]; # to store the splitted line results
 
-	if ($CRIT_CVES ne "") {
-		$lines[$posCVE] = "$CVEline_str[0] = $CRIT_CVES"; # assign new percentage to the state file
-	}
-	else {$lines[$posCVE] = "$CVEline_str[0] = None"; } # assign new percentage to the state file
-	untie @lines; # unlink array from file and write new percentage
+    if ($CRIT_CVES ne "") {                               # case where there are critical cves
+        $lines[$posCVE] = "$CVEline_str[0] = $CRIT_CVES"; # assign critical cves to line
+    }
+    else {                                                # case where there are critical cves
+        $lines[$posCVE] = "$CVEline_str[0] = None";       # assign none to critical cves to line
+    }
+    untie @lines; # unlink array from file and write new percentage
 }
 #---------------------------------------------------------------------------------------------------------#
 # SUB: Performs the oscap or ciscat vulnerabilities audit based in the operating system found.
 # It creates a file with the results that will later be processed in order to send the info to Nagios.
 sub vulnerabilities_Audit {	
-
-	switch($DISTRIBUTION)
-	{
-		case "centos" {
-			# severities are found in the resulting xml file
-			$OSCAP_VULN_RESULTS = runOpenSCAP("$config{\"$DISTRIBUTION\_cve_filename\"}.bz2", $config{"$DISTRIBUTION\_cve_link"}, "centos$VERSION-cve-oval.xml");		
-			$SEVERITIES_FILE = "$VULNERAB_RESULTS_FILENAME.xml";
-		}
-		case "redhat" {
-			# severities are found in the general rhel file
-			$OSCAP_VULN_RESULTS = runOpenSCAP("$config{\"redhat_cve_filename\"}.bz2", $config{"redhat_cve_link"}, $config{"redhat_cve_filename"});
-			$SEVERITIES_FILE = $WORKPATH . $config{"redhat_cve_filename"};
-		}
-		case "suse" {   
-			# uses the cvss database to search for its severities
-			$OSCAP_VULN_RESULTS = runOpenSCAP($config{"$CONFIGDIS\_cve_filename"}, $config{"$CONFIGDIS\_cve_link"}, $config{"$CONFIGDIS\_cve_filename"});
-			$FIND_CVSS = 1; # use cvss method to search for severities		
-		}
-		case "debian" {   
-			# debian has no severities found yet
-			$OSCAP_VULN_RESULTS = runOpenSCAP($config{"$CONFIGDIS\_cve_filename"}, $config{"$CONFIGDIS\_cve_link"}, $config{"$CONFIGDIS\_cve_filename"});
-			$SEVERITIES_FILE = $config{"$CONFIGDIS\_cve_filename"};
-		}
-		case "ubuntu" {  
-			# severities are found in the ubuntu version audit file
-			$OSCAP_VULN_RESULTS = runOpenSCAP($config{"$CONFIGDIS\_cve_filename"}, $config{"$CONFIGDIS\_cve_link"}, $config{"$CONFIGDIS\_cve_filename"});
-			$SEVERITIES_FILE = $config{"$CONFIGDIS\_cve_filename"};
-		}
-		case "solaris" {  
-			# severities are found in the solaris version audit file - needs to be tested
-			$OSCAP_VULN_RESULTS = runOpenSCAP($config{"$CONFIGDIS\_cve_filename"}, $config{"$CONFIGDIS\_cve_link"}, $config{"$CONFIGDIS\_cve_filename"});
-			$SEVERITIES_FILE = $config{"$CONFIGDIS\_cve_filename"};
-		}
-		case "freebsd" {  
-			# severities are found in a different format on the freebsd version audit file - needs to be implemented
-			$OSCAP_VULN_RESULTS = runOpenSCAP($config{"$CONFIGDIS\_cve_filename"}, $config{"$CONFIGDIS\_cve_link"}, $config{"$CONFIGDIS\_cve_filename"});
-			$SEVERITIES_FILE = $config{"$CONFIGDIS\_cve_filename"};
-		}
-		else { die "Operating System not supported by this script. Ask administrator to add it."; }
-	}
+    if ( $DISTRIBUTION eq "centos" ) {
+        # severities are found in the resulting xml file
+        $OSCAP_VULN_RESULTS = runOpenSCAP("$config{\"$DISTRIBUTION\_cve_filename\"}.bz2", $config{"$DISTRIBUTION\_cve_link"}, "centos$VERSION-cve-oval.xml");		
+        $SEVERITIES_FILE = "$VULNERAB_RESULTS_FILENAME.xml";
+    }
+    elsif ( $DISTRIBUTION eq "redhat" ) {
+        # severities are found in the general rhel file
+        $OSCAP_VULN_RESULTS = runOpenSCAP("$config{\"redhat_cve_filename\"}.bz2", $config{"redhat_cve_link"}, $config{"redhat_cve_filename"});
+        $SEVERITIES_FILE = $WORKPATH . $config{"redhat_cve_filename"};
+    }
+    elsif ( $DISTRIBUTION eq "suse" ) {   
+        # uses the cvss database to search for its severities
+        $OSCAP_VULN_RESULTS = runOpenSCAP($config{"$CONFIGDIS\_cve_filename"}, $config{"$CONFIGDIS\_cve_link"}, $config{"$CONFIGDIS\_cve_filename"});
+        $FIND_CVSS = 1; # use cvss method to search for severities		
+    }
+    elsif ( $DISTRIBUTION eq "debian" ) {   
+        # debian has no severities found yet
+        $OSCAP_VULN_RESULTS = runOpenSCAP($config{"$CONFIGDIS\_cve_filename"}, $config{"$CONFIGDIS\_cve_link"}, $config{"$CONFIGDIS\_cve_filename"});
+        $SEVERITIES_FILE = $config{"$CONFIGDIS\_cve_filename"};
+    }
+    elsif ( $DISTRIBUTION eq "ubuntu" ) {  
+        # severities are found in the ubuntu version audit file
+        $OSCAP_VULN_RESULTS = runOpenSCAP($config{"$CONFIGDIS\_cve_filename"}, $config{"$CONFIGDIS\_cve_link"}, $config{"$CONFIGDIS\_cve_filename"});
+        $SEVERITIES_FILE = $config{"$CONFIGDIS\_cve_filename"};
+    }
+    elsif ( $DISTRIBUTION eq "solaris" ) {  
+        # severities are found in the solaris version audit file - needs to be tested
+        $OSCAP_VULN_RESULTS = runOpenSCAP($config{"$CONFIGDIS\_cve_filename"}, $config{"$CONFIGDIS\_cve_link"}, $config{"$CONFIGDIS\_cve_filename"});
+        $SEVERITIES_FILE = $config{"$CONFIGDIS\_cve_filename"};
+    }
+    elsif ( $DISTRIBUTION eq "freebsd" ) {  
+        # severities are found in a different format on the freebsd version audit file - needs to be implemented
+        $OSCAP_VULN_RESULTS = runOpenSCAP($config{"$CONFIGDIS\_cve_filename"}, $config{"$CONFIGDIS\_cve_link"}, $config{"$CONFIGDIS\_cve_filename"});
+        $SEVERITIES_FILE = $config{"$CONFIGDIS\_cve_filename"};
+    }
+    else {
+        die "Operating System not supported by this script. Ask administrator to add it.";
+    }
 }
 #------------------------------------------------------------------------------------
 sub runOpenSCAP {	
 
-	my ($cve_filename, $cve_link, $audit_file) = @_;
+    my ($cve_filename, $cve_link, $audit_file) = @_;
 
-	# Send to update cve the filename and the link
-	updateCVE($cve_filename, $cve_link);
+    # Send to update cve the filename and the link
+    updateCVE($cve_filename, $cve_link);
 
-	# If it is centos, create centos cve from rhel feed
-	if ("$DISTRIBUTION" eq "centos") {
-		createCentosCVE($config{"redhat_cve_filename"});
-	}
+    # If it is centos, create centos cve from rhel feed
+    if ("$DISTRIBUTION" eq "centos") {
+        createCentosCVE($config{"redhat_cve_filename"});
+    }
 
-	# To run the OSCAP tool, capturing the output. More info: http://static.open-scap.org/openscap-1.0/oscap_user_manual.html 
-	my $OSCAPCOMMAND = "oscap oval eval --skip-valid --results $VULNERAB_RESULTS_FILENAME.xml " .
-		"--report $VULNERAB_RESULTS_FILENAME.html " . $WORKPATH . $audit_file;
+    # To run the OSCAP tool, capturing the output. More info: http://static.open-scap.org/openscap-1.0/oscap_user_manual.html 
+    my $OSCAPCOMMAND = "oscap oval eval --skip-valid --results $VULNERAB_RESULTS_FILENAME.xml " .
+        "--report $VULNERAB_RESULTS_FILENAME.html " . $WORKPATH . $audit_file;
 
-	# Execute Assessment
-	my $audit_results = `$OSCAPCOMMAND`; # execute oscap command, store results in variable
-	unlink "/tmp/oscap_cve.xml"; # unlink temporary file
+    # Execute Assessment
+    my $audit_results = `$OSCAPCOMMAND`; # execute oscap command, store results in variable
+    unlink "/tmp/oscap_cve.xml"; # unlink temporary file
 
-	die "No XML results file found. OSCAP scan error." if (! -f "$VULNERAB_RESULTS_FILENAME.xml");
+    die "No XML results file found. OSCAP scan error." if (! -f "$VULNERAB_RESULTS_FILENAME.xml");
 
-	return $audit_results;
+    return $audit_results;
 }
 #------------------------------------------------------------------------------------
 #SUB: Update CVE Package 
 sub updateCVE {
 	
-	my ($oval_filename, $oval_link) = @_;
-	chdir ($WORKPATH); # change to work path
+    my ($oval_filename, $oval_link) = @_;
+    chdir ($WORKPATH); # change to work path
 
-	# Determine if there is a new version of the RHEL CVE feed (updated regularly)
-	my $last_modified = "never";
-	$last_modified = `date -r $oval_filename` if (-f $oval_filename); 
+    # Determine if there is a new version of the RHEL CVE feed (updated regularly)
+    my $last_modified = "never";
+    $last_modified = `date -r $oval_filename` if (-f $oval_filename); 
 
-	# Download command
-	#system("curl -m $config{\"download_timeout\"} -O -z $oval_filename $oval_link &> /dev/null");
-	system("wget -c -N $oval_link -O $oval_filename");
+    # Download command
+    #system("curl -m $config{\"download_timeout\"} -O -z $oval_filename $oval_link &> /dev/null");
+    system("wget -c -N $oval_link -O $oval_filename");
 
-	# If file is new, unzip it
-	my $new_modified = `date -r $oval_filename`;
+    # If file is new, unzip it
+    my $new_modified = `date -r $oval_filename`;
 
-	if ($last_modified ne $new_modified && substr($oval_filename, -3) eq "bz2") {
-    	system("bzip2 -dkf $oval_filename");
-	}
+    if ($last_modified ne $new_modified && substr($oval_filename, -3) eq "bz2") {
+        system("bzip2 -dkf $oval_filename");
+    }
 
-	die "Could not find $oval_filename" if (! -f "$oval_filename");
-	chdir ($CRONPATH); # change to cron path, where script is running
+    die "Could not find $oval_filename" if (! -f "$oval_filename");
+    chdir ($CRONPATH); # change to cron path, where script is running
 }
 #------------------------------------------------------------------------------------
 # SUB: Search in CVE rules file the rule and its severity
 sub lookupSeverity {
-	my ($definition_id) = @_; # definition id
-	my $severity_twig = XML::Twig->new( twig_roots =>
-		{ "oval_definitions/definitions/definition[\@id=\"$definition_id\"]/metadata/advisory" => \&parse_severity});
-	$severity_twig->parsefile($SEVERITIES_FILE);
-	$severity_twig->purge; # released memory
-	return;
+    my ($definition_id) = @_; # definition id
+    my $severity_twig = XML::Twig->new( twig_roots =>
+        { "oval_definitions/definitions/definition[\@id=\"$definition_id\"]/metadata/advisory" => \&parse_severity});
+    $severity_twig->parsefile($SEVERITIES_FILE);
+    $severity_twig->purge; # released memory
+    return;
 }
 #------------------------------------------------------------------------------------
 # SUB: Gets the severity value
 sub parse_severity {
     my (undef, $element) = @_;
     my $severity = $element->first_child_text("severity");
-	$results{ucfirst(lc($severity))} += 1; # increment severity
+    $results{ucfirst(lc($severity))} += 1; # increment severity
 
-	my $cve = $element->first_child_text("cve"); # get cve id
+    my $cve = $element->first_child_text("cve"); # get cve id
 
-	# each cve stated in the conf file 
-	foreach my $crit_cve (@critical_cves){ 
-		if ($cve eq $crit_cve){ 
-			$CVE_fails++; # increment crit cve variable
-			no warnings 'uninitialized'; # ignore uninitialized errors
-			$CRIT_CVES .= "$cve "; # append crit cve id
-		}
-	}
+    # each cve stated in the conf file 
+    foreach my $crit_cve (@critical_cves){ 
+        if ($cve eq $crit_cve){ 
+            $CVE_fails++; # increment crit cve variable
+            no warnings 'uninitialized'; # ignore uninitialized errors
+            $CRIT_CVES .= "$cve "; # append crit cve id
+        }
+    }
     $element->purge; # release memory
     return;
 }
@@ -445,47 +462,50 @@ sub lookupCVSS {
     if ($1) {
         $cvss = ucfirst(lc($1)); # store severity result
     }
-    else { $cvss = "Unknown"; } # if severity was not found send unknown
+    else { 
+        $cvss = "Unknown"; # if severity was not found send unknown
+    } 
 
     return $cvss;
 }
 #---------------------------------------------------------------------------------------------------------#
 # SUB: Append report to trend result file
 sub appendReport {
-	no warnings 'uninitialized'; # ignore uninitialized errors
-	# open and creates file, if file empty, initialize with default value
-	open my $fileHandle, ">>", "$TRENDRESULT_FILE" or die "Can't open or create $TRENDRESULT_FILE\n";
-	if (-z $fileHandle) { 
-		print $fileHandle "$DATE $report"; 
-		`chmod 600 $TRENDRESULT_FILE`;
-	}
+    no warnings 'uninitialized'; # ignore uninitialized errors
+    # open and creates file, if file empty, initialize with default value
+    open my $fileHandle, ">>", "$TRENDRESULT_FILE" or die "Can't open or create $TRENDRESULT_FILE\n";
+    if (-z $fileHandle) { 
+        print $fileHandle "$DATE $report"; 
+        `chmod 600 $TRENDRESULT_FILE`;
+    }
 
-	else {
-		# tie lines from file to array
-		tie my @lines, 'Tie::File', "$TRENDRESULT_FILE" or die "Cannot tie $TRENDRESULT_FILE: $!";
-		if (scalar @lines >= $config{"vuln_trend_quant"}) {shift (@lines);} # removes first element if it is old enough
-		else { push @lines, "$DATE $report"; }
-		untie @lines; # unlink array from file and write new percentage
-	}
-	close $fileHandle;
+    else {
+        # tie lines from file to array
+        tie my @lines, 'Tie::File', "$TRENDRESULT_FILE" or die "Cannot tie $TRENDRESULT_FILE: $!";
+        if (scalar @lines >= $config{"vuln_trend_quant"}) {shift (@lines);} # removes first element if it is old enough
+        else { push @lines, "$DATE $report"; }
+        untie @lines; # unlink array from file and write new percentage
+    }
+    close $fileHandle;
 }
 #------------------------------------------------------------------------------------
 ### SUB: Create last result file
 sub createReportFile {
-	# store in file the report line
-	my $fh;
-	# create the last result file if it doesn't exist
-	if (! -f $LASTRESULT_FILE) {
-	    $fh = IO::File->new($LASTRESULT_FILE, "w");
-	    print $fh $report;
-	    $fh->close();
-	} else {
-		unlink ($LASTRESULT_FILE);
-		$fh = IO::File->new($LASTRESULT_FILE, "w");
-		print $fh $report;
-		$fh->close();
-	}
-	`chmod 600 $LASTRESULT_FILE`;
+    # store in file the report line
+    my $fh;
+    # create the last result file if it doesn't exist
+    if (! -f $LASTRESULT_FILE) {
+        $fh = IO::File->new($LASTRESULT_FILE, "w");
+        print $fh $report;
+        $fh->close();
+    } 
+    else {
+        unlink ($LASTRESULT_FILE);
+        $fh = IO::File->new($LASTRESULT_FILE, "w");
+        print $fh $report;
+        $fh->close();
+    }
+    `chmod 600 $LASTRESULT_FILE`;
 }
 #------------------------------------------------------------------------------------
 # SUB: Written by Graham Mosley and edited by Jordan Caraballo Vega
@@ -670,30 +690,25 @@ sub createCentosCVE {
 sub usage {
     print<<USAGE;
 
-    This script is a wrapper for the OpenSCAP program.
-	It was written to be used in conjunction with Nagios.
-	The default values for warn and crit are defined in config.
-	They can be overriden by a command line argument.
+    This script is a wrapper for the OpenSCAP and CIS-CAT program.
+    It was written to be used in conjunction with Nagios.
+    The default values for warn and crit are defined in config.
+    They can be overriden by a command line argument.
 
-	Note: this script uses a config file (CheckScapStatus.cfg)  
+    Note: this script uses a config file (CheckScapStatus.cfg)  
 
-	Usage Examples:
-	 $0
-	 $0   -n
-	 $0   -w 90 -c 70
-	 $0   -h    # shows this information
+    Usage Examples:
+        $0
+        $0   -w 90 -c 70
+        $0   -h    # shows this information
 
     Options:
-      -w | -warn
-        Warn if score is less than this value.
-      -c | -crit
-        Crit if score is less than this value.
-      -n | --nagios
-        Output in Nagios format.
-      -h
-        This help and usage information
-
+        -w | -warn
+            Warn if score is less than this value.
+        -c | -crit
+            Crit if score is less than this value.
+        -h
+            This help and usage information
 USAGE
-      exit 3;
+    exit 3;
 }
-
