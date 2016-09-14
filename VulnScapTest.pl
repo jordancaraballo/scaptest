@@ -336,22 +336,22 @@ sub vulnerabilities_Audit {
     elsif ( $DISTRIBUTION eq "debian" ) {   
         # debian has no severities found yet
         $OSCAP_VULN_RESULTS = runOpenSCAP($config{"$CONFIGDIS\_cve_filename"}, $config{"$CONFIGDIS\_cve_link"}, $config{"$CONFIGDIS\_cve_filename"});
-        $SEVERITIES_FILE = $config{"$CONFIGDIS\_cve_filename"};
+        $SEVERITIES_FILE = $WORKPATH . $config{"$CONFIGDIS\_cve_filename"};
     }
     elsif ( $DISTRIBUTION eq "ubuntu" ) {  
         # severities are found in the ubuntu version audit file
         $OSCAP_VULN_RESULTS = runOpenSCAP($config{"$CONFIGDIS\_cve_filename"}, $config{"$CONFIGDIS\_cve_link"}, $config{"$CONFIGDIS\_cve_filename"});
-        $SEVERITIES_FILE = $config{"$CONFIGDIS\_cve_filename"};
+        $SEVERITIES_FILE = $WORKPATH . $config{"$CONFIGDIS\_cve_filename"};
     }
     elsif ( $DISTRIBUTION eq "solaris" ) {  
         # severities are found in the solaris version audit file - needs to be tested
         $OSCAP_VULN_RESULTS = runOpenSCAP($config{"$CONFIGDIS\_cve_filename"}, $config{"$CONFIGDIS\_cve_link"}, $config{"$CONFIGDIS\_cve_filename"});
-        $SEVERITIES_FILE = $config{"$CONFIGDIS\_cve_filename"};
+        $SEVERITIES_FILE = $WORKPATH . $config{"$CONFIGDIS\_cve_filename"};
     }
     elsif ( $DISTRIBUTION eq "freebsd" ) {  
         # severities are found in a different format on the freebsd version audit file - needs to be implemented
         $OSCAP_VULN_RESULTS = runOpenSCAP($config{"$CONFIGDIS\_cve_filename"}, $config{"$CONFIGDIS\_cve_link"}, $config{"$CONFIGDIS\_cve_filename"});
-        $SEVERITIES_FILE = $config{"$CONFIGDIS\_cve_filename"};
+        $SEVERITIES_FILE = $WORKPATH . $config{"$CONFIGDIS\_cve_filename"};
     }
     else {
         die "Operating System not supported by this script. Ask administrator to add it.";
