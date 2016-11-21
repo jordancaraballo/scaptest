@@ -66,11 +66,11 @@ my ($DISTRIBUTION, $VERSION) = getDistribution();         # OS variable, subrout
 my $CONFIGDIS                = $DISTRIBUTION . $VERSION;  # used to search elements in conf file
 
 ### Create the report directory if it does not exist
-my $WORKPATH = $config{"working_directory"};
+my $WORKPATH = $config{"working_path"};
 die "I don't know where I am" if ($WORKPATH eq "" ); # if path empty, die
 
 ### Create the report directory if it does not exist
-my $SAVINGDIR = $config{"report_directory"}; # takes it from the config file
+my $SAVINGDIR = $config{"report_path"}; # takes it from the config file
 mkdir $SAVINGDIR unless -d $SAVINGDIR;       # Check if dir exists. If not, create it. 
 
 ### Create the state file if it does not exist and save last audit percentage

@@ -39,7 +39,7 @@ sub parse_rule;	     # Parse rule from resulting xml file
 ### Config file path
 my $CONFPATH = "/etc/scaptest"; # path where config file is located                				 
 die "I don't know where I am\n" if ($CONFPATH eq "" ); # if path empty, die
-my $CONFIG_FILENAME          = $CONFPATH . "/CheckScapStatus.cfg"; 
+my $CONFIG_FILENAME = $CONFPATH . "/CheckScapStatus.cfg"; 
 #------------------------------------------------------------------------------------
 #  General Global Excecutions and Variables
 #------------------------------------------------------------------------------------
@@ -58,13 +58,13 @@ my ($DISTRIBUTION, $VERSION) = getDistribution();         # OS variable, subrout
 my $CONFIGDIS                = $DISTRIBUTION . $VERSION;  # used to search elements in conf file
 
 ### Create the report directory if it does not exist
-my $WORKPATH = $config{"working_directory"};
+my $WORKPATH = $config{"working_path"};
 
 # If path is empty, kill program
-die "ERROR: Don't know where I am\n" if ($WORKPATH eq "" );
+die "ERROR: Don't know where I am working.\n" if ($WORKPATH eq "" || !(-d $WORKPATH));
 
-my $SAVINGDIR = $config{"report_directory"}; # takes it from the config file
-mkdir $SAVINGDIR unless -d $SAVINGDIR;       # Check if dir exists. If not, create it. 
+my $SAVINGDIR = $config{"report_path"}; # takes it from the config file
+mkdir $SAVINGDIR unless -d $SAVINGDIR;  # Check if dir exists. If not, create it. 
 
 ### Create the state file if it does not exist and save last audit percentage
 my $STATE_FILE       = $SAVINGDIR . $config{"base_state_file"};   # declare name of the state file
@@ -379,15 +379,21 @@ sub runCISCAT {
     # If benchmark file was not specified exit
     die "No CISCAT Benchmark file given on config file." if (!$CISCAT_XCCDF_FILE);
 
+    # Specify and validate existance of cis-cat path
+    die "ERROR: Did you add cis-cat? Can't find it.\n" if ($config{"ciscat_path"} eq "" || !(-d $config{"ciscat_path"}));
+
+    # Specify and validate existance of java path
+    die "ERROR: Did you add java? Can't find it.\n" if ($config{"java_path"} eq "" || !(-d $config{"java_path"}));
+
     # In case of having the jdk package downloaded into the working directory
-    my $CISCATCOMMAND_BASELINE =  $WORKPATH . "jdk1.8.0_91/bin/java  -jar CISCAT.jar -a " .
-        "-b benchmarks/$CISCAT_XCCDF_FILE -l2 -x -r $SAVINGDIR -rn $BASELINE_RESULTS_FILENAME";
+    my $CISCATCOMMAND_BASELINE =  "$config{java_path}/bin/java -jar $config{ciscat_path}/CISCAT.jar -a " .
+        "-b $config{ciscat_path}/benchmarks/$CISCAT_XCCDF_FILE -l2 -x -r $SAVINGDIR -rn $BASELINE_RESULTS_FILENAME";
 
     # In case of having openJDK or java installed
     # my $CISCATCOMMAND_BASELINE =  "./CIS-CAT.sh -a " .
     #       "-b benchmarks/$CISCAT_XCCDF_FILE -l2 -x -r $SAVINGDIR -rn $BASELINE_RESULTS_FILENAME"; 
 
-    chdir ($WORKPATH . "cis-cat-full"); # change to ciscat directory
+    chdir ($config{"ciscat_path"}); # change to ciscat directory
     system($CISCATCOMMAND_BASELINE);    # run ciscat tool
     chdir ($WORKPATH);                  # change to work directory
     # if the txt results file doesn't exist exit with NAGIOS unknown error code
@@ -452,7 +458,7 @@ sub parse_rule {
     # the most common is notchecked which occurs when it's parent test failed
     } 
     else {
-        $results{"other"}++; # increment as an other severity
+        $results{"Other"}++; # increment as an other severity
         $cce = $element->first_child_text("ident"); # gets the cce id
         if ($cce eq "") { 
             $dirtycce  = $element->att("idref") =~ /_rule_(.*?)_/; # get the cce with regular expressions (CIS-CAT audit)
