@@ -168,6 +168,12 @@ downloads/jdk8-downloads-2133151.html?ssSourceSiteId=otnes.
 
 In order to report to nagios you have to manually add both Check functions to the
 10_General file.
+
+To use the SCAP Security Guide files, clone the files from https://github.com/
+OpenSCAP/scap-security-guide. If you want to compile everything, just do make; if
+not follow their wiki instructions. Ones this is compiled, go to the output folder
+of the OS and add the name of the selected file to the configuration file (default
+/etc/scaptest/CheckScapStatus.cfg
 #*******************************************************************************#
 # References
 #*******************************************************************************#

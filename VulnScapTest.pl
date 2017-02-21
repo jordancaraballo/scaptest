@@ -11,7 +11,7 @@
 use Cwd;
 use strict;          # disables expressions that could behave unexpectedly or are difficult to debug
 use Config;          # access Perl configuration information
-use IO::File;		 # supply object methods for filehandles
+use IO::File;        # supply object methods for filehandles
 use warnings;        # gives control over which warnings are enabled
 use Tie::File;       # used to append/tie date to config file
 use XML::Twig;       # yum install perl-XML-Twig
@@ -43,12 +43,12 @@ sub runOpenSCAP;           # Run openscap audit
 #  General Global variables
 #------------------------------------------------------------------------------------
 # Config file path
-my $CONFPATH = "/etc/scaptest";   # path where config file is located                				 
-die "I don't know where I am." if ($CONFPATH eq "" );              # if path empty, die
+my $CONFPATH = "/etc/scaptest";  # path where config file is located                				 
+die "ERROR: Conf path empty or not found." if ($CONFPATH eq "" );  # if path empty, die
 my $CONFIG_FILENAME          = $CONFPATH . "/CheckScapStatus.cfg"; # conf file name
 
 my $CRONPATH = cwd(); # get current cron job path
-die "I don't know where I am" if ($CRONPATH eq "" );               # if path empty, die
+die "ERROR: Cron path empty or not found." if ($CRONPATH eq "" ); # if path empty, die
 #------------------------------------------------------------------------------------
 #  General Global Excecutions and Variables
 #------------------------------------------------------------------------------------
@@ -67,11 +67,11 @@ my $CONFIGDIS                = $DISTRIBUTION . $VERSION;  # used to search eleme
 
 ### Create the report directory if it does not exist
 my $WORKPATH = $config{"working_path"};
-die "I don't know where I am" if ($WORKPATH eq "" ); # if path empty, die
+die "ERROR: Work path empty or not found." if ($WORKPATH eq "" ); # if path empty, die
 
 ### Create the report directory if it does not exist
 my $SAVINGDIR = $config{"report_path"}; # takes it from the config file
-mkdir $SAVINGDIR unless -d $SAVINGDIR;       # Check if dir exists. If not, create it. 
+mkdir $SAVINGDIR unless -d $SAVINGDIR;  # Check if dir exists. If not, create it. 
 
 ### Create the state file if it does not exist and save last audit percentage
 my $STATE_FILE       = $SAVINGDIR . $config{"vuln_state_file"};   # declare name of the state file
@@ -116,9 +116,9 @@ my $VULNERAB_RESULTS_FILENAME = $SAVINGDIR . "$CONFIGDIS-vuln-audit-" . $DATE;  
 my $OSCAP_VULN_RESULTS; # stores OpenSCAP results
 
 ### To work with the createCentosCVE()
-my $parser;   # to parse xml file
-my $xpc;	  # to obtain attributes from file
-my $dom;	  # the domain of the file
+my $parser; # to parse xml file
+my $xpc;    # to obtain attributes from file
+my $dom;    # the domain of the file
 
 ### Define Scoring Method
 # Some operating systems do not have severities in their resulting files
@@ -385,6 +385,13 @@ sub runOpenSCAP {
 #------------------------------------------------------------------------------------
 #SUB: Update CVE Package 
 sub updateCVE {
+
+
+    # edit this to download the file and check if it is corrupted
+    # check in perl if it can detect if file is corrupted
+    # while file is not corrupted
+    # bool variable to determine if it is corrupted
+
 	
     my ($oval_filename, $oval_link) = @_;
     chdir ($WORKPATH); # change to work path
@@ -393,17 +400,31 @@ sub updateCVE {
     my $last_modified = "never";
     $last_modified = `date -r $oval_filename` if (-f $oval_filename); 
 
-    # Download command
-    #system("curl -m $config{\"download_timeout\"} -O -z $oval_filename $oval_link &> /dev/null");
-    system("wget -c -N $oval_link -O $oval_filename");
+    # while to validate if file is corrupted
+    my $check_variable = 0; # variable to exit while loop
+    while (!$check_variable){
+        # Download command
+        #system("curl -m $config{\"download_timeout\"} -O -z $oval_filename $oval_link &> /dev/null");
+        system("wget -c -N $oval_link -O $oval_filename");
 
-    # If file is new, unzip it
-    my $new_modified = `date -r $oval_filename`;
+        # If file is new, unzip it
+        my $new_modified = `date -r $oval_filename`;
 
-    if ($last_modified ne $new_modified && substr($oval_filename, -3) eq "bz2") {
-        system("bzip2 -dkf $oval_filename");
+        if ($last_modified ne $new_modified && substr($oval_filename, -3) eq "bz2") {
+            system("bzip2 -dkf $oval_filename");
+        }
+
+        # Parse xml file to find any exception 
+        my $parser = XML::LibXML->new();
+        my $xml_text = eval { $parser->parse_string($oval_filename); };
+        if ($@){
+            $check_variable = 1;
+        }
+        else {
+            unlink $oval_filename;
+            unlink "$oval_filename.bz2";
+        }
     }
-
     die "Could not find $oval_filename" if (! -f "$oval_filename");
     chdir ($CRONPATH); # change to cron path, where script is running
 }
@@ -464,7 +485,7 @@ sub lookupCVSS {
     my ($link) = @_; # link with specific cve
     my $result = `wget -qO- $link`; # store html in variable
 
-	# Parse severity from variable
+    # Parse severity from variable
     $result =~ m|.*https://nvd.nist.gov/cvss/v2-calculator.*/a>\s(\w+)|;
 
     my $cvss = ""; # variable to store result
@@ -474,7 +495,6 @@ sub lookupCVSS {
     else { 
         $cvss = "Unknown"; # if severity was not found send unknown
     } 
-
     return $cvss;
 }
 #---------------------------------------------------------------------------------------------------------#

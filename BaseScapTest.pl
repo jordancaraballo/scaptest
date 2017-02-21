@@ -11,7 +11,7 @@
 use Cwd;
 use strict;          # disables expressions that could behave unexpectedly or are difficult to debug
 use Config;          # access Perl configuration information
-use IO::File;		 # supply object methods for filehandles
+use IO::File;        # supply object methods for filehandles
 use warnings;        # gives control over which warnings are enabled
 use Tie::File;       # used to append/tie date to config file
 use XML::Twig;       # used to parse xml files
@@ -38,7 +38,7 @@ sub parse_rule;	     # Parse rule from resulting xml file
 #------------------------------------------------------------------------------------
 ### Config file path
 my $CONFPATH = "/etc/scaptest"; # path where config file is located                				 
-die "I don't know where I am\n" if ($CONFPATH eq "" ); # if path empty, die
+die "ERROR: Conf path empty or not found." if ($CONFPATH eq "" ); # if path empty, die
 my $CONFIG_FILENAME = $CONFPATH . "/CheckScapStatus.cfg"; 
 #------------------------------------------------------------------------------------
 #  General Global Excecutions and Variables
@@ -60,8 +60,8 @@ my $CONFIGDIS                = $DISTRIBUTION . $VERSION;  # used to search eleme
 ### Create the report directory if it does not exist
 my $WORKPATH = $config{"working_path"};
 
-# If path is empty, kill program
-die "ERROR: Don't know where I am working.\n" if ($WORKPATH eq "" || !(-d $WORKPATH));
+# If work path is empty, kill program
+die "ERROR: Work path empty or not found." if ($WORKPATH eq "" || !(-d $WORKPATH));
 
 my $SAVINGDIR = $config{"report_path"}; # takes it from the config file
 mkdir $SAVINGDIR unless -d $SAVINGDIR;  # Check if dir exists. If not, create it. 
@@ -124,7 +124,7 @@ my $BASE_OSCAP_HTML_REPORT    = $config{"save_html"} ? "--report $SAVINGDIR" . "
 my $audit_tool = $config{"baseline_audit_tool"};
 die "Need to specify audit tool at config file." if (!$audit_tool);
 
-# Store in array variable from config file thats states compatibility 
+# Store in array variable from config file that states compatibility 
 # between the OS and the audit tool. Example: If freebsd is not in 
 # openscap_compliant, is because openscap cannot be used by this script,
 # or is not compliant yet in freebsd.
@@ -156,7 +156,7 @@ if ( $tool_compatibility{"$audit_tool"} ) {
     elsif ($audit_tool eq "STIG" && $os_compliant ) {
         die "STIG Needs to be implemented";
     }
-    # tool matched in config file is not supported is not supported
+    # tool matched in config file is not supported
     else {
         die "Current OS is not supported by this tool. Change tool in config file.";
     }
@@ -326,7 +326,7 @@ sub insertPercentage {
     if ($RESULT_PERCENT < $CURRENT_PERCENT) {                    # case where new percentage diminishes
         $lines[$posLow]   = "$Lowline_str[0] = $RESULT_PERCENT"; # assign new percentage to lower % line
         $lines[$posState] = "$STATEline_str[0] = CRIT";          # assign CRIT status
-	}
+    }
     elsif ($RESULT_PERCENT > $CURRENT_PERCENT) {                 # case where new percentage increases
         $lines[$posPer]   = "$Perline_str[0] = $RESULT_PERCENT"; # assign new percentage to result
         $lines[$posLow]   = "$Lowline_str[0] = 0.00";            # restore lower percentage to 0
@@ -342,14 +342,14 @@ sub insertPercentage {
     else {                                                       # case where there are no critical cces
         $lines[$posCCE] = "$CCEline_str[0] = None";              # assign none to the critical cces line
     } 
-	untie @lines; # unlink array from file and write new percentage
+    untie @lines; # unlink array from file and write new percentage
 }
 #---------------------------------------------------------------------------------------------------------#
 ### SUB: Append report to trend result file
 sub appendReport {
     no warnings 'uninitialized'; # ignore uninitialized errors
-	# open and creates file, if file empty, initialize with default value
-    open my $fileHandle, ">>", $TRENDRESULT_FILE or die "Can't open or create $TRENDRESULT_FILE\n";
+    # open and creates file, if file empty, initialize with default value
+    open my $fileHandle, ">>", $TRENDRESULT_FILE or die "Can't open or create $TRENDRESULT_FILE.";
     if (-z $fileHandle) { 
         print $fileHandle "$DATE $report"; 
         `chmod 600 $TRENDRESULT_FILE`; # give root permissions to file
@@ -377,13 +377,13 @@ sub runCISCAT {
     my $CISCAT_XCCDF_FILE = $config{$CONFIGDIS . "_XCCDF_cis_file"};
 
     # If benchmark file was not specified exit
-    die "No CISCAT Benchmark file given on config file." if (!$CISCAT_XCCDF_FILE);
+    die "ERROR: No CISCAT Benchmark file given on config file." if (!$CISCAT_XCCDF_FILE);
 
     # Specify and validate existance of cis-cat path
-    die "ERROR: Did you add cis-cat? Can't find it.\n" if ($config{"ciscat_path"} eq "" || !(-d $config{"ciscat_path"}));
+    die "ERROR: Did you add cis-cat? Can't find it." if ($config{"ciscat_path"} eq "" || !(-d $config{"ciscat_path"}));
 
     # Specify and validate existance of java path
-    die "ERROR: Did you add java? Can't find it.\n" if ($config{"java_path"} eq "" || !(-d $config{"java_path"}));
+    die "ERROR: Did you add java? Can't find it." if ($config{"java_path"} eq "" || !(-d $config{"java_path"}));
 
     # In case of having the jdk package downloaded into the working directory
     my $CISCATCOMMAND_BASELINE =  "$config{java_path}/bin/java -jar $config{ciscat_path}/CISCAT.jar -a " .
@@ -393,11 +393,11 @@ sub runCISCAT {
     # my $CISCATCOMMAND_BASELINE =  "./CIS-CAT.sh -a " .
     #       "-b benchmarks/$CISCAT_XCCDF_FILE -l2 -x -r $SAVINGDIR -rn $BASELINE_RESULTS_FILENAME"; 
 
-    chdir ($config{"ciscat_path"}); # change to ciscat directory
-    system($CISCATCOMMAND_BASELINE);    # run ciscat tool
-    chdir ($WORKPATH);                  # change to work directory
-    # if the txt results file doesn't exist exit with NAGIOS unknown error code
-    die "No XML results file found. CISCAT scan error." if (! -f $SAVINGDIR . "$BASELINE_RESULTS_FILENAME.xml");
+    chdir ($config{"ciscat_path"});  # change to ciscat directory
+    system($CISCATCOMMAND_BASELINE); # run ciscat tool
+    chdir ($WORKPATH);               # change to work directory
+    # if the txt results file doesn't exist, exit with NAGIOS unknown error code
+    die "ERROR: No XML results file found. CISCAT scan error." if (! -f $SAVINGDIR . "$BASELINE_RESULTS_FILENAME.xml");
 }
 #------------------------------------------------------------------------------------
 ### SUB: Run openscap tool
@@ -424,6 +424,9 @@ sub parse_rule {
     my $result = $element->first_child_text("result"); # gets the result
     my ($cce, $dirtycce);                              # used to get cce id with regular expressions
 
+    # Note: /02/24/17 The Scap-Security-Guide has an error determining the
+    # CCE identifier. Talk with the scg folks.
+
     # ingore unselected or info tests
     if ($result eq "notselected" or $result eq "info") {
         return;
@@ -439,7 +442,7 @@ sub parse_rule {
         $results{ucfirst(lc($severity))} += 1; # increment severity, add to hash if it is not there
 
         $cce = $element->first_child_text("ident"); # oscap format, gets cee id
-		# if it is empty, is a ciscat id, so here is taken the ciscat rule id
+        # if it is empty, is a ciscat id, so here is taken the ciscat rule id
         if ($cce eq "") { 
             $dirtycce  = $element->att("idref") =~ /_rule_(.*?)_/; # get the cce with regular expressions (CIS-CAT audit)
             $cce = $1; # the result of the dirtycce
