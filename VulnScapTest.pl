@@ -386,13 +386,6 @@ sub runOpenSCAP {
 #SUB: Update CVE Package 
 sub updateCVE {
 
-
-    # edit this to download the file and check if it is corrupted
-    # check in perl if it can detect if file is corrupted
-    # while file is not corrupted
-    # bool variable to determine if it is corrupted
-
-	
     my ($oval_filename, $oval_link) = @_;
     chdir ($WORKPATH); # change to work path
 
@@ -400,32 +393,32 @@ sub updateCVE {
     my $last_modified = "never";
     $last_modified = `date -r $oval_filename` if (-f $oval_filename); 
 
-    # while to validate if file is corrupted
-    my $check_variable = 0; # variable to exit while loop
-    while (!$check_variable){
+    # for to validate if file is corrupted or if failed to download
+    my $wget_return;
+    foreach my $try (0..5) {
         # Download command
         #system("curl -m $config{\"download_timeout\"} -O -z $oval_filename $oval_link &> /dev/null");
         system("wget -c -N $oval_link -O $oval_filename");
+        $wget_return = $?;
 
-        # If file is new, unzip it
-        my $new_modified = `date -r $oval_filename`;
-
-        if ($last_modified ne $new_modified && substr($oval_filename, -3) eq "bz2") {
-            system("bzip2 -dkf $oval_filename");
-        }
-
-        # Parse xml file to find any exception 
-        my $parser = XML::LibXML->new();
-        my $xml_text = eval { $parser->parse_string($oval_filename); };
-        if ($@){
-            $check_variable = 1;
+        print "Resultado wget " . $wget_return . "\n\n";
+        if ($wget_return == 0) {
+            last;
         }
         else {
             unlink $oval_filename;
             unlink "$oval_filename.bz2";
         }
     }
-    die "Could not find $oval_filename" if (! -f "$oval_filename");
+    
+    # If file is new, unzip it
+    my $new_modified = `date -r $oval_filename`;
+
+    if ($last_modified ne $new_modified && substr($oval_filename, -3) eq "bz2") {
+        system("bzip2 -dkf $oval_filename");
+    }
+    
+    die "Could not find $oval_filename. Check network connection or file corruption." if (! -f "$oval_filename");
     chdir ($CRONPATH); # change to cron path, where script is running
 }
 #------------------------------------------------------------------------------------

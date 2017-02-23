@@ -11,5 +11,5 @@ elif [ ! -f "/etc/scaptest/CheckScapStatus.cfg" ]; then
 fi
 
 ### Run Baseline Scap Audit with cron
-perl /usr/local/lib/scaptest/BaseScapTest.pl
+perl /usr/local/lib/scaptest/BaseScapTest.pl >> /var/log/base_scaptest.log 2>&1
 
