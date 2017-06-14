@@ -112,54 +112,61 @@ files are accurate. Severities are still not found.
 #*******************************************************************************#
 - Compliance Test: Windows and Solaris have CIS-CAT benchmarks; no openscap file 
 found yet. However, FreeBSD has a CIS-CAT benchmark, but does not come with this
-ciscat package, so it has to be searched.
+ciscat package, so it has to be searched. Windows is currently being assessed by
+CIS-CAT.
 - Vulnerabilities Test: FreeBSD and Solaris have oval files, and store severities
 in the same file. However, FreeBSD file format is very different so it might not
-work out of the box. Files for Windows need to be searched.
+work out of the box. OpenSCAP files for Windows need to be searched, however,
+CIS-CAT currently supports Windows vulnerability feeds.
 #*******************************************************************************#
 # Subroutines
 #*******************************************************************************#
 - Baseline Test
-	getDistribution   - Gets the OS distribution and version
-	getDatestring     - Returns string with the day and time scan is performed
-	createStateFile   - Creates state, if not present; takes last run percentage
-	usage             - Function that prints out script help menu
-	insertPercentage  - Insert new percentage to state file
-	appendReport      - Append results to trend file
-	runCISCAT         - Executes CIS-CAT command
-	runOSCAP          - Executes OSCAP command
-	createLastRunFile - Prevents duplicates to be stored
-	parse_score       - Parse score from resulting xml file
-	parse_rule	  - Parse rule from resulting xml file
+    sub getDistribution; # Gets the OS distribution and version
+    sub getDatestring;   # Returns string with the day and time scan is performed
+    sub editStateFile;   # Creates state, if not present; takes last run percentage
+    sub usage;           # Function that prints out script help menu
+    sub insertPercentage;# Insert new percentage to state file
+    sub appendReport;    # Append results to trend file
+    sub runCISCAT;       # Executes CIS-CAT command
+    sub runOSCAP;        # Executes OSCAP command
+    sub createReportFile;# Creates Last Run File
+    sub parse_score;     # Parse score from resulting xml file
+    sub parse_rule;	     # Parse rule from resulting xml file
 - Vulnerabilities Test
-	getDistribution       - Gets the OS distribution and version
-	getDatestring         - Returns string with the day and time scan is performed
-	usage                 - Function that prints out script help menu
-	appendReport          - Append results to trend file
-	lookupCVSS            - Parse the CVSS score for a CVE (if it exists)
-	vulnerabilities_Audit - Run oscap depending on the OS
-	updateCVE             - Update cve rules file
-	createReportFile      - Create Last Run File
-	lookupSeverity        - Search severity and crit cves of failed results
-	parse_severity        - Get the severity of the failed test
-	parse_definiton       - Get the definition id
-	parse_result          - Get the result of the test
-	insertCritCVE         - Insert into state file Crit CVEs
-	score_txt             - Score severities through text
-	score_xml             - Score severities through xml and cvss database
-	runOpenSCAP           - Run openscap audit
+    sub getDistribution;       # Gets the OS distribution and version
+    sub getDatestring;         # Returns string with the day and time scan is performed
+    sub usage;                 # Function that prints out script help menu
+    sub appendReport;          # Append results to trend file
+    sub lookupCVSS;            # Parse the CVSS score for a CVE (if it exists)
+    sub vulnerabilities_Audit; # Run oscap depending on the OS
+    sub updateCVE;             # Update cve rules file
+    sub createReportFile;      # Create Last Run File
+    sub lookupSeverity;        # Search severity and crit cves of failed results
+    sub parse_severity;        # Get the severity of the failed test
+    sub parse_definiton;       # Get the definition id
+    sub parse_result;          # Get the result of the test
+    sub insertCritCVE;         # Insert into state file Crit CVEs
+    sub score_txt;             # Score severities through text
+    sub score_xml;             # Score severities through xml and cvss database
+    sub runOpenSCAP;           # Run openscap audit
+    sub runCISCAT;             # Run CIS-CAT audit
 #*******************************************************************************#
 # Executing
 #*******************************************************************************#
 When executing the program for the first time you can run CopyFiles script to place
-in the specific folders the needed files to run the system. To check if it is working
+in the specific folders the needed files to run the system. To check if it is working,
 you can run the cron job file. It is configured to run daily.
 
 In order to run CIS-CAT you need to download it from their web page and extract it at
 the /usr/local/lib/scaptest directory. It needs openJDK installed in order to run.
 The current script is assuming that the jdk package is extracted in the working directory.
-In order to exclude adding the jdk folder, change in the runCISCAT function the run command
-for "./CIS-CAT.sh" and then the commands that follow the line.
+In order to run this program specify where your java path is located. 
+
+At the moment CIS-CAT is set to a full auto assessment. In case you want to specify a 
+specific benchmark file, add a line to the configuration file as it follows:
+{operating_system}{version}_XCCDF_cis_file = {cis-cat_xccdf_file}
+Example: centos6_XCCDF_cis_file = CIS_CentOS_Linux_6_Benchmark_v2.0.1-xccdf.xml
 
 To download the CIS-CAT bundle you need a licence, however, it can be downloaded from 
 https://community.cisecurity.org/collab/public/.
@@ -174,6 +181,11 @@ OpenSCAP/scap-security-guide. If you want to compile everything, just do make; i
 not follow their wiki instructions. Ones this is compiled, go to the output folder
 of the OS and add the name of the selected file to the configuration file (default
 /etc/scaptest/CheckScapStatus.cfg
+
+The SCAP Security Guide currently offers support to multiple operating systems,
+however, there is still a lack in support related to the dependencies needed by 
+each Operating System. Therefore, some of the benchmark files listed cannot be 
+built in their environment because of missing dependencies.
 #*******************************************************************************#
 # References
 #*******************************************************************************#
