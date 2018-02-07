@@ -1,5 +1,12 @@
 #!/bin/bash
 # Script to copy files needed to execute baseline audit
+# Files are placed at their designated destinations based on the
+# default configs of this program.
+# Author: Jordan Alexis Caraballo-Vega, University of Puerto Rico at Humacao
+
+# Link to download scap-security-guide
+SSG_link="https://github.com/OpenSCAP/scap-security-guide/releases/download/v0.1.37/scap-security-guide-0.1.37-oval-5.10.zip"
+SSG_dir="scap-security-guide-0.1.37-oval-5.10"
 
 ### Create scap dir in etc for conf file
 mkdir -m 600 /etc/scaptest
@@ -17,6 +24,12 @@ cp BaseScapTest.pl /usr/local/lib/scaptest/
 # Vulnerabilities Audit Files
 cp VulnScapTest.pl /usr/local/lib/scaptest/
 cp RunBaseScapTest RunVulnScapTest /etc/cron.daily/
+
+# Download and unzip scap-security-guide latest prebuilt from git
+mkdir -m 600 /usr/local/src/scaptest
+wget $SSG_link -O /usr/local/src/scaptest/scap-security-guide.zip
+unzip /usr/local/src/scaptest/scap-security-guide.zip -d /usr/local/src/scaptest
+mv /usr/local/src/scaptest/$SSG_dir /usr/local/src/scaptest/scap-security-guide
 #-------------------------------------------------------------------------
 # Test files
 #-------------------------------------------------------------------------
@@ -25,11 +38,11 @@ if [ ! -f "/etc/scaptest/CheckScapStatus.cfg" ]; then
 fi
 #-------------------------------------------------------------------------
 if [ ! -f "/usr/share/nagios-client/functions/CheckBaseScapStatus" ]; then
-	echo "CheckBaseScapStatus NOT FOUND at destination..." 
+	echo "CheckBaseScapStatus NOT FOUND at destination..."
 fi
 #-------------------------------------------------------------------------
 if [ ! -f "/usr/share/nagios-client/functions/CheckVulnScapStatus" ]; then
-	echo "CheckVulnScapStatus NOT FOUND at destination..." 
+	echo "CheckVulnScapStatus NOT FOUND at destination..."
 fi
 #-------------------------------------------------------------------------
 if [ ! -f "/usr/local/lib/scaptest/BaseScapTest.pl" ]; then
@@ -48,5 +61,8 @@ if [ ! -f "/etc/cron.daily/RunVulnScapTest" ]; then
 	echo "RunVulnScapTest NOT FOUND at destination..."
 fi
 #-------------------------------------------------------------------------
+if [ ! -d "/usr/local/src/scaptest/scap-security-guide" ]; then
+	echo "RunVulnScapTest NOT FOUND at destination..."
+fi
+#-------------------------------------------------------------------------
 echo "Done."
-
