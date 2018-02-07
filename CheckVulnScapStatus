@@ -1,4 +1,4 @@
-### Function to check and report Scap Vulnerabilities Audit
+### Function to check and report Scap Vulnerabilities Audit Reports
 CheckVulnScapStatus() {
 	HOSTNAME=`/bin/hostname -s`
 

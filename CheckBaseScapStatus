@@ -1,8 +1,8 @@
-### Function to check and report Scap Baseline Audit
+### Function to check and report Scap Baseline Audit Reports
 CheckBaseScapStatus() {
 	HOSTNAME=`/bin/hostname -s`
 
-	
+
 	### Config file and saving dir path
         CONF_FILE='/etc/scaptest/CheckScapStatus.cfg'
         SAVING_DIR='/var/cache/scaptest'
@@ -11,7 +11,7 @@ CheckBaseScapStatus() {
 	# Warn range is 48 hours, Crit range is 96 hours
 	AGE_RESULT=`${PLUGINDIR}/check_file_age -w 172800 \
 		-c 345600 ${SAVING_DIR}/BaseScapLastRun.txt`
-	
+
 	# strips out the status of the result - state
 	AGE_STATUS=`echo $AGE_RESULT | cut -d " " -f 2 | cut -d: -f 1`
 
