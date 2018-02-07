@@ -1,5 +1,5 @@
 #************************************************************************************#
-#!/usr/bin/perl	
+#!/usr/bin/perl
 # Automated SCAP Security Tool - Baseline and Compliance Test
 # June 6, 2016 - August 12, 2016
 # Author: Jordan Alexis Caraballo-Vega - University of Puerto Rico at Humacao
@@ -18,6 +18,7 @@ use XML::Twig;       # used to parse xml files
 use Getopt::Long;    # xtended processing of command line options
 use File::Basename;  # used to determine the name and path of the file
 use Config::General; # used to parse conf file
+use Sys::Hostname;   # used to get hostname from the system
 #------------------------------------------------------------------------------------
 #  Prototypes
 #------------------------------------------------------------------------------------
@@ -45,7 +46,7 @@ else {
     die "ERROR: Config file not found. Review README for guidance"
 }
 
-### Parse config file 
+### Parse config file
 my $conf   = Config::General->new(-ConfigFile => $CONFIG_FILE,-AutoTrue => 1);
 my %config = $conf->getall; # creates a hash with the elements from config file
 
@@ -54,7 +55,7 @@ my $WORKPATH = $config{"working_path"};
 die "ERROR: Work path empty or not found." if ($WORKPATH eq "" || !(-d $WORKPATH));
 
 my $REPORTPATH = $config{"report_path"}; # takes it from the config file
-mkdir $REPORTPATH unless -d $REPORTPATH; # Check if dir exists. If not, create it. 
+mkdir $REPORTPATH unless -d $REPORTPATH; # Check if dir exists. If not, create it.
 
 ### Create the state file if it does not exist and save last audit percentage
 my $STATE_FILE = $REPORTPATH . $config{"base_state_file"}; # declare name of the state file
@@ -68,7 +69,7 @@ my %states = $state->getall; # creates a hash with the elements from state file
 #  General Global Excecutions and Variables
 #------------------------------------------------------------------------------------
 my $DATE = getDatestring();
-my ($DISTRIBUTION, $VERSION) = ($states{"distribution"},$states{"version"}); 
+my ($DISTRIBUTION, $VERSION) = ($states{"distribution"},$states{"version"});
 my $CURRENT_PERCENT = $states{"current_percentage"}; # get current percentage from state file
 my $LOWER_PERCENT   = $states{"lower_percentage"};   # get if there was a lower percentage
 my $CRIT_CCES; # to store critical cces
@@ -126,8 +127,8 @@ my $BASE_OSCAP_HTML_REPORT    = $config{"save_html"} ? "--report $REPORTPATH" . 
 my $audit_tool = $config{"base_audit_tool"};
 die "Need to specify audit tool at config file." if (!$audit_tool);
 
-# Store in array variable from config file that states compatibility 
-# between the OS and the audit tool. Example: If freebsd is not in 
+# Store in array variable from config file that states compatibility
+# between the OS and the audit tool. Example: If freebsd is not in
 # openscap_compliant, is because openscap cannot be used by this script,
 # or is not compliant yet in freebsd.
 my @openscap_compliant = split /, /, $config{"base_openscap_compliant"}; # supported by OpenSCAP
@@ -210,13 +211,13 @@ unlink $REPORTPATH . "$BASELINE_RESULTS_FILENAME.xml"  if (!$config{"save_xml"})
 
 ### Print report
 if ($RESULT_PERCENT <= $crit_threshold) {
-    print (($NAGIOS_OUTPUT ? "CRIT: " : "SCAP CRIT - ") . $report);
-} 
+    print $states{"hostname"} . (($NAGIOS_OUTPUT ? "CRIT: " : " SCAP CRIT - ") . $report);
+}
 elsif ($RESULT_PERCENT <= $warn_threshold) {
-    print (($NAGIOS_OUTPUT ? "WARN: " : "SCAP WARN - ") . $report);
-} 
+    print $states{"hostname"} . (($NAGIOS_OUTPUT ? "WARN: " : " SCAP WARN - ") . $report);
+}
 else {
-    print (($NAGIOS_OUTPUT ? "OK: " : "SCAP OK - ") . $report);
+    print $states{"hostname"} . (($NAGIOS_OUTPUT ? "OK: " : " SCAP OK - ") . $report);
 }
 #------------------------------------------------------------------------------------
 #  Subroutines
@@ -226,11 +227,11 @@ sub getDistribution {
     my ($distro, $version); # variables to store distribution and version
 
     # Method #1 - Get distribution and version through rpm command
-    my @rpm_linux_distributions = ("centos", "redhat", "sles");
+    my @rpm_linux_distributions = ("centos", "redhat", "sles", "suse");
     my $rpm_command;
 
     foreach my $os (@rpm_linux_distributions) {
-        $rpm_command = `rpm -qa | grep $os-release`;
+        $rpm_command = `rpm -q $os-release 2>/dev/null`;
         if ($rpm_command) {
             $rpm_command =~ /([0-9]+)/; # regex looking for first integer match
             return $os, $1;             # return distribution and version
@@ -250,22 +251,22 @@ sub getDistribution {
        }
     }
     # Method #3 - If it is a FreeBSD device.
-    elsif ($^O eq "freebsd") { 
+    elsif ($^O eq "freebsd") {
         $distro  = "freebsd";                # set distribution
         $version = `uname -r | cut -d. -f1`; # set version
     }
     # Method #4 - If it is a Solaris device.
-    elsif ($^O eq "solaris") { 
+    elsif ($^O eq "solaris") {
         $distro  = "solaris";                             # set distribution
         $version = `uname -v | cut -d. -f1 | tr -d '\n'`; # set version
     }
     # Method #5 - If it is a windows device
-    elsif ($^O eq "MSWin32") { 
-        ($distro, $version) = ("windows", $Config{osvers}); 
+    elsif ($^O eq "MSWin32") {
+        ($distro, $version) = ("windows", $Config{osvers});
     }
     # If device has not being added to the function
-    else { 
-        die "Can't recognize OS. Verify getDistribution sub capabalities." 
+    else {
+        die "Can't recognize OS. Verify getDistribution sub capabalities."
     }
     return $distro, $version; # returns the distribution and version
 }
@@ -285,7 +286,8 @@ sub editStateFile {
     open my $stateFile, ">>", $STATE_FILE or die "Can't open or create $STATE_FILE";
     if (-z $STATE_FILE) {
         ### Determine distribution and version of the system
-        my ($distribution, $version) = getDistribution(); 
+        my ($distribution, $version) = getDistribution();
+        print $stateFile "hostname = " . hostname . "\n";
         print $stateFile "distribution = $distribution\nversion = $version\n";
         print $stateFile "current_percentage = 0.00\nlower_percentage = 0.00\n";
         print $stateFile "Crit_CCEs = None\nNagios_Status = CRIT\n";
@@ -295,8 +297,8 @@ sub editStateFile {
 }
 #------------------------------------------------------------------------------------
 ### SUB: Insert new percentage to state file
-sub insertPercentage { 
-    my ($posPer, $posLow, $posCCE, $posState) = (2, 3, 4, 5); # position where current percentage is located at the state file
+sub insertPercentage {
+    my ($posPer, $posLow, $posCCE, $posState) = (3, 4, 5, 6); # position where current percentage is located at the state file
     no warnings 'uninitialized'; # ignore uninitialized errors
     tie my @lines, 'Tie::File', "$STATE_FILE" or die "Cannot tie $STATE_FILE: $!"; # tie lines from file to array
 
@@ -307,7 +309,7 @@ sub insertPercentage {
 
     if ($Perline_str[0] ne "current_percentage") {             # validate format of the file again
         die "$STATE_FILE does not have the requiered format."; # kill program to check state file format
-    } 
+    }
 
     if ($RESULT_PERCENT < $CURRENT_PERCENT) {                    # case where new percentage diminishes
         $lines[$posLow]   = "$Lowline_str[0] = $RESULT_PERCENT"; # assign new percentage to lower % line
@@ -327,7 +329,7 @@ sub insertPercentage {
     }
     else {                                                       # case where there are no critical cces
         $lines[$posCCE] = "$CCEline_str[0] = None";              # assign none to the critical cces line
-    } 
+    }
     untie @lines; # unlink array from file and write new percentage
 }
 #------------------------------------------------------------------------------------
@@ -350,18 +352,18 @@ sub parse_rule {
     # ingore unselected or info tests
     if ($result eq "notselected" or $result eq "info") {
         return;
-    } 
+    }
     elsif ($result eq "pass") {
         $results{"pass"}++;
-    } 
+    }
     elsif ($result eq "fail") {
         if (!$severity) {
             $severity = "Unknown";
         }
         $results{ucfirst(lc($severity))} += 1;      # increment severity, add to hash if it is not there
-        
+
         $cce = $element->first_child_text("ident"); # oscap format, gets cee id
-        if ($cce eq "") { 
+        if ($cce eq "") {
             $dirtycce  = $element->att("idref") =~ /_rule_(.*?)_/; # cce with regular expressions (CIS-CAT audit)
             $cce = $1; # the result of the dirtycce
         }
@@ -372,14 +374,14 @@ sub parse_rule {
         }
     # it's possible that tests can produce other types of reports
     # the most common is notchecked which occurs when it's parent test failed
-    } 
+    }
     else {
         $results{"Other"}++; # increment as an other severity
         $cce = $element->first_child_text("ident"); # gets the cce id
-        if ($cce eq "") { 
+        if ($cce eq "") {
             $dirtycce  = $element->att("idref") =~ /_rule_(.*?)_/; # cce with regular expressions (CIS-CAT audit)
             $cce = $1; # the result of the dirtycce
-        } 
+        }
         # each cce stated in the conf file
         no warnings 'uninitialized'; # ignore uninitialized errors
         if ($critical_cces{"$cce"}) {
@@ -397,7 +399,7 @@ sub runOSCAP {
     die "No OpenSCAP Benchmark file, or profile given on config file." if (!$OSCAP_PROFILE || !$OSCAP_XCCDF_FILE);
 
     my $OSCAPCOMMAND_BASELINE = "oscap xccdf eval --skip-valid --profile $OSCAP_PROFILE --results $REPORTPATH".
-        "$BASELINE_RESULTS_FILENAME.xml $BASE_OSCAP_HTML_REPORT $OSCAP_XCCDF_FILE > /dev/null";		
+        "$BASELINE_RESULTS_FILENAME.xml $BASE_OSCAP_HTML_REPORT $OSCAP_XCCDF_FILE > /dev/null";
     system($OSCAPCOMMAND_BASELINE); # run oscap tool
     die "No XML results file found. OpenSCAP scan error." if (! -f $REPORTPATH . "$BASELINE_RESULTS_FILENAME.xml");
 }
@@ -424,13 +426,13 @@ sub runCISCAT {
 ### SUB: Create last result file
 sub createReportFile {
     open my $fileHandle, ">>", $LASTRESULT_FILE or die "Can't open or create $LASTRESULT_FILE.";
-    if (-z $fileHandle) { 
-        print $fileHandle $report; 
+    if (-z $fileHandle) {
+        print $fileHandle "$states{hostname} $report";
         `chmod 600 $LASTRESULT_FILE`; # give root permissions to file
     }
     else {
         tie my @lines, 'Tie::File', $LASTRESULT_FILE or die "Cannot tie $LASTRESULT_FILE: $!";
-        $lines[0] = $report;
+        $lines[0] = $states{"hostname"} . " $report";
         untie @lines; # unlink array from file and write new percentage
     }
     close $fileHandle;
@@ -440,19 +442,19 @@ sub createReportFile {
 sub appendReport {
     no warnings 'uninitialized'; # ignore uninitialized errors
     open my $fileHandle, ">>", $TRENDRESULT_FILE or die "Can't open or create $TRENDRESULT_FILE.";
-    if (-z $fileHandle) { 
-        print $fileHandle "$DATE $report"; 
+    if (-z $fileHandle) {
+        print $fileHandle "$states{hostname} $DATE $report";
         `chmod 600 $TRENDRESULT_FILE`; # give root permissions to file
-    } 
+    }
     else {
         tie my @lines, 'Tie::File', $TRENDRESULT_FILE or die "Cannot tie $TRENDRESULT_FILE: $!";
         # removes first element if it is old enough
         if (scalar @lines >= $config{"base_trend_quant"}) {
             shift (@lines);
-        } 
-        else { 
-            push @lines, "$DATE $report"; # push element to last index if there is space  
-        } 
+        }
+        else {
+            push @lines, "$states{hostname} $DATE $report"; # push element to last index if there is space
+        }
         untie @lines; # unlink array from file and write new percentage
     }
     close $fileHandle;
@@ -467,7 +469,7 @@ sub usage {
     The default values for warn and crit are defined in config.
     They can be overriden by a command line argument.
 
-    Note: this script uses a config file (CheckScapStatus.cfg)  
+    Note: this script uses a config file (CheckScapStatus.cfg)
 
     Usage Examples:
         $0
