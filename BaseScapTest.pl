@@ -36,6 +36,9 @@ sub parse_rule;	     # Parse rule from resulting xml file
 #------------------------------------------------------------------------------------
 #  General Global variables
 #------------------------------------------------------------------------------------
+### Die if the user is not root
+die "ERROR: Must run as root." if $> != 0;
+
 ### Define path to configuration file
 my $CONFIG_FILE = "/etc/scaptest/CheckScapStatus.cfg";
 if (-f $CONFIG_FILE) {} # if config file was found pass
