@@ -46,9 +46,7 @@ sub runCISCAT;             # Run CIS-CAT audit
 die "ERROR: Must run as root." if $> != 0;
 
 ### Define path to configuration file
-#my $CONFIG_FILE = "/etc/scaptest/CheckScapStatus.cfg";
-# Temporary
-my $CONFIG_FILE = "/home/jordancaraballo/Downloads/scaptest/CheckScapStatus.cfg";
+my $CONFIG_FILE = "/etc/scaptest/CheckScapStatus.cfg";
 if (-f $CONFIG_FILE) {} # if config file was found pass
 elsif (-f "/Program/Files/CheckScapStatus.cfg") {
     $CONFIG_FILE = "/Program/Files/CheckScapStatus.cfg";
