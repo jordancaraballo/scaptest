@@ -381,10 +381,9 @@ sub runCISCAT {
 #SUB: Update CVE Package
 sub updateCVE {
     my ($oval_filename, $oval_link) = @_;
+
+    chdir ($WORKPATH);     # change to work path
     unlink $oval_filename; # temporary fix for file corruption
-
-    chdir ($WORKPATH); # change to work path
-
     # Determine if there is a new version of the CVE feed (updated regularly)
     my $last_modified = "never";
     $last_modified = `date -r $oval_filename` if (-f $oval_filename);
