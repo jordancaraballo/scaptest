@@ -380,31 +380,14 @@ sub runCISCAT {
 #------------------------------------------------------------------------------------
 #SUB: Update CVE Package
 sub updateCVE {
-    my ($oval_filename, $oval_link) = @_;
-
-    chdir ($WORKPATH);     # change to work path
-    unlink $oval_filename; # temporary fix for file corruption
-    # Determine if there is a new version of the CVE feed (updated regularly)
-    my $last_modified = "never";
-    $last_modified = `date -r $oval_filename` if (-f $oval_filename);
-
-    # for to validate if file is corrupted or if failed to download
-    my $wget_return;
-    foreach my $try (0..5) {
-        system("wget -c -N $oval_link -O $oval_filename");
-        $wget_return = $?;
-        if ($wget_return == 0) {
-            last;
-        }
-        else {
-            unlink $oval_filename;
-            unlink "$oval_filename.bz2";
-        }
+    my ($oval_filename, $oval_link) = @_; # receives filename and link to download the file
+    chdir ($WORKPATH); # change to work path
+    if (substr($oval_link, -3) eq "bz2") {
+        system("wget -N $oval_link -O $oval_filename.bz2"); # download file if it changed at the server side
+        system("bzip2 -dkf $oval_filename.bz2");            # decompress file
     }
-    # If file is new, unzip it
-    my $new_modified = `date -r $oval_filename`;
-    if (substr($oval_filename, -3) eq "bz2") {
-        system("bzip2 -dkf $oval_filename");
+    else {
+        system("wget -N $oval_link -O $oval_filename"); # download file if it changed at the server side
     }
     die "Could not find $oval_filename. Check network connection or file corruption." if (! -f "$oval_filename");
     chdir ($CRONPATH); # change to cron path, where script is running
