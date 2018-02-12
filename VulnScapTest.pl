@@ -380,14 +380,14 @@ sub runCISCAT {
 #------------------------------------------------------------------------------------
 #SUB: Update CVE Package
 sub updateCVE {
-    my ($oval_filename, $oval_link) = @_; # receives filename and link to download the file
+    my ($oval_filename, $oval_link) = @_;
     chdir ($WORKPATH); # change to work path
     if (substr($oval_link, -3) eq "bz2") {
-        system("wget -N $oval_link -O $oval_filename.bz2"); # download file if it changed at the server side
-        system("bzip2 -dkf $oval_filename.bz2");            # decompress file
+        system("wget -N $oval_link");
+        system("bzip2 -dkf $oval_filename.bz2");
     }
     else {
-        system("wget -N $oval_link -O $oval_filename"); # download file if it changed at the server side
+        system("wget -N $oval_link");
     }
     die "Could not find $oval_filename. Check network connection or file corruption." if (! -f "$oval_filename");
     chdir ($CRONPATH); # change to cron path, where script is running
