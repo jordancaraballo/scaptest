@@ -72,6 +72,13 @@ The program will produce by default:
 hostname SCAP WARN - Score 85% (123/145) 2-High 3-Medium 2-Low Crit CCEs: 0-fail     # baseline
 hostname SCAP CRIT - Score 7 Vulnerabilities 2-High 3-Medium 2-Low Crit CVEs: 0-fail # vulnerabilities
 ```
+The script WindowsCISAnalyze.py lets the admin summarize scores from CIS-CAT Windows baseline and vulnerabilities assessments. This file is a separate script that needs to be ran manually but it can be scheduled by a cron job. The output file looks like:
+```
+Date CIS-CAT Vulnerability Assessment - Last Updated On Wednesday, May 17 2017 00:09:56
+Host: SCAPTEST, OS: Windows 8, Score: 867 Vulnerabilities 741-High 102-Medium 17-Low
+Host: SCAPTEST, OS: Windows 8, Score: 767 Vulnerabilities 641-High 102-Medium 17-Low
+WARN: The number of scores 8 is less than your number of hosts 16
+```
 
 ## Built With
 
@@ -107,4 +114,4 @@ hostname SCAP CRIT - Score 7 Vulnerabilities 2-High 3-Medium 2-Low Crit CVEs: 0-
   * John E. Jasen
   * Bennett Samowich
   * Maximiliano Guillen
-  * Zed Pobre.
+  * Zed Pobre

@@ -16,7 +16,7 @@ import os.path
 FilesPath = "Path" # string of path that stores the reports, end with /
 CompName  = FilesPath + "Win-CIS-CAT-ComplianceScores.txt"       # name of the compliance resulting file
 VulnName  = FilesPath + "Win-CIS-CAT-VulnerabilitiesScores.txt"  # name of the vulnerable resulting file
-NumHosts  = 12                                                   # int with the amount of hosts top assess
+NumHosts  = 12                                                   # int with the number of hosts top assess
 
 # Function to assess compliance files
 # It takes a list of the files, the resulting filename, the path and the number of hosts.
@@ -50,7 +50,7 @@ def createCompScoreFile(compList, compFile, host, date, numHosts):
             the_file.write('Host: ' + host + ', Score: ' + hostscore['Score'] + ' (' + hostscore['Pass'] + '/' + hostscore['Maximum Possible'])
             the_file.write('), Unknown: ' + hostscore['Unknown'] + ', Not selected: ' + hostscore['Not Selected'] + ', Error: ' + hostscore['Error']+'\n')
         if len(compList) < numHosts:
-            the_file.write('WARN: The amount of scores ' + str(len(compList)) + ' is less than your number of hosts ' + str(numHosts) + ' \n')
+            the_file.write('WARN: The number of scores ' + str(len(compList)) + ' is less than your number of hosts ' + str(numHosts) + ' \n')
 
 # Function to assess compliance files
 def assessVulnerabilities(filesList, vulnFileName, filesPath, numHosts):
@@ -78,7 +78,7 @@ def createVulnScoreFile(vulnList, vulnFile, numHosts):
             the_file.write(', Score: ' + vulnDict['Total Found'] + ' Vulnerabilities ')
             the_file.write(vulnDict['Total High'] + '-High ' + vulnDict['Total Medium'] + '-Medium ' + vulnDict['Total Low'] + '-Low\n')
         if len(vulnList) < numHosts:
-            the_file.write('WARN: The amount of scores ' + str(len(vulnList)) + ' is less than your number of hosts ' + str(numHosts) + ' \n')
+            the_file.write('WARN: The number of scores ' + str(len(vulnList)) + ' is less than your number of hosts ' + str(numHosts) + ' \n')
 
 # Function to send email. Still testing it.
 def sendResults():
