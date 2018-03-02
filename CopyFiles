@@ -5,8 +5,8 @@
 # Author: Jordan Alexis Caraballo-Vega, University of Puerto Rico at Humacao
 
 # Link to download scap-security-guide
-SSG_link="https://github.com/OpenSCAP/scap-security-guide/releases/download/v0.1.37/scap-security-guide-0.1.37-oval-5.10.zip"
-SSG_dir="scap-security-guide-0.1.37-oval-5.10"
+SSG_link="https://github.com/OpenSCAP/scap-security-guide/releases/download/v0.1.38/scap-security-guide-0.1.38-oval-5.10.zip"
+SSG_dir="scap-security-guide-0.1.38-oval-5.10"
 
 ### Create scap dir in etc for conf file
 mkdir -m 600 /etc/scaptest
