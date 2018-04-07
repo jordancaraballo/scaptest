@@ -20,7 +20,7 @@ bash ./CopyFiles                 # will copy files in their default directories
 
 #### Centos 6, Centos 7, RHEL 6 and RHEL 7      
 ```
-yum install perl-XML-Twig perl-XML-LibXML perl-Config-General openscap-scanner scap-security-guide bzip2 wget
+yum install perl-XML-Twig perl-XML-LibXML perl-Config-General openscap-scanner scap-security-guide bzip2 wget unzip
 ```
 
 #### SLES 11 and SLES 12               
