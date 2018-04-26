@@ -225,20 +225,8 @@ else {
 #------------------------------------------------------------------------------------
 ### SUB: Gets the OS distribution through the linux module, OS can be added to this function
 sub getDistribution {
-    my ($distro, $version); # variables to store distribution and version
 
-    # Method #1 - Get distribution and version through rpm command
-    my @rpm_linux_distributions = ("centos", "redhat", "sles", "suse");
-    my $rpm_command;
-
-    foreach my $os (@rpm_linux_distributions) {
-        $rpm_command = `rpm -q $os-release 2>/dev/null`;
-        if ($rpm_command) {
-            $rpm_command =~ /([0-9]+)/; # regex looking for first integer match
-            return $os, $1;             # return distribution and version
-        }
-    }
-    # Method #2 - Get distribution and version through cat /etc/*release command
+    # Method #1 - Get distribution and version through cat /etc/*release command
     my @other_linux_distributions = ("debian", "ubuntu"); # other linux distributions
     my $release_command           = `cat /etc/*release`;  # log of release information
 
@@ -251,8 +239,20 @@ sub getDistribution {
            }
        }
     }
+    # Method #2 - Get distribution and version through rpm command
+    my @rpm_linux_distributions = ("centos", "redhat", "sles", "suse");
+    my $rpm_command;
+
+    foreach my $os (@rpm_linux_distributions) {
+        $rpm_command = `rpm -q $os-release 2>/dev/null`;
+        if ($rpm_command) {
+            $rpm_command =~ /([0-9]+)/; # regex looking for first integer match
+            return $os, $1;             # return distribution and version
+        }
+    }
     # Method #3 - If it is a FreeBSD device.
-    elsif ($^O eq "freebsd") {
+    my ($distro, $version); # variables to store distribution and version
+    if ($^O eq "freebsd") {
         $distro  = "freebsd";                # set distribution
         $version = `uname -r | cut -d. -f1`; # set version
     }
