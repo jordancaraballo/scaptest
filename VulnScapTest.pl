@@ -227,7 +227,7 @@ else {
 sub getDistribution {
 
     # Method #1 - Get distribution and version through cat /etc/*release command
-    my @other_linux_distributions = ("debian", "ubuntu"); # other linux distributions
+    my @other_linux_distributions = ("debian","ubuntu","sles","suse"); # other linux distributions
     my $release_command           = `cat /etc/*release`;  # log of release information
 
     if ($release_command) {
@@ -240,7 +240,7 @@ sub getDistribution {
        }
     }
     # Method #2 - Get distribution and version through rpm command
-    my @rpm_linux_distributions = ("centos", "redhat", "sles", "suse");
+    my @rpm_linux_distributions = ("centos", "redhat");
     my $rpm_command;
 
     foreach my $os (@rpm_linux_distributions) {
