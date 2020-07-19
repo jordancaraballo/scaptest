@@ -1,10 +1,10 @@
 # Automated SCAP Security Tool
 
-- Tool to continuously monitor our operating systems
-- Compare and implement different security tools
-- Keep time trending record of the report
-- Identify specific critical rules
-- Report to Nagios
+- Tool to continuously monitor our operating systems.
+- Compare and implement different security tools.
+- Keep time trending record of the report.
+- Identify specific critical rules.
+- Report to Nagios.
 
 ## Getting Started
 
